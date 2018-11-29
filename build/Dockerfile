@@ -2,7 +2,8 @@ FROM golang:alpine AS build
 
 RUN apk add --no-cache \
       git \
-      curl
+      curl \
+      openssh-client
 
 RUN mkdir -p /out/usr/local/bin
 
