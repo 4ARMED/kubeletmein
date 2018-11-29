@@ -10,6 +10,8 @@ ENV KUBELETMEIN $GOPATH/src/github.com/4armed/kubeletmein
 RUN mkdir -p "$(dirname ${KUBELETMEIN})"
 COPY . $KUBELETMEIN
 
+RUN curl -sL https://github.com/golang/dep/releases/download/v0.5.0/dep-linux-amd64 -o /usr/local/bin/dep
+
 WORKDIR $KUBELETMEIN
 RUN dep ensure && go build ./cmd/kubeletmein && cp ./kubeletmein /out/usr/local/bin/kubeletmein
 
