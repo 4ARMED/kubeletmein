@@ -29,6 +29,7 @@ type Config struct {
 	certDir         string
 	nodeName        string
 	skipDiscovery   bool
+	kubeAPIServer   string
 }
 
 // Command represents the gke command

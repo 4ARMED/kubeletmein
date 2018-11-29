@@ -135,6 +135,7 @@ func bootstrapCmd() *cobra.Command {
 	cmd.Flags().StringVarP(&config.caCertPath, "ca-cert", "a", "ca-certificates.crt", "The filename to write the apiserver CA cert to")
 	cmd.Flags().StringVarP(&config.kubeletCertPath, "kubelet-cert", "c", "kubelet.crt", "The filename to write the kubelet cert to")
 	cmd.Flags().StringVarP(&config.kubeletKeyPath, "kubelet-key", "k", "kubelet.key", "The filename to write the kubelet key to")
+	cmd.Flags().StringVarP(&config.kubeAPIServer, "server", "s", "", "The k8s api server hostname/IP address. Only needed if skipping discovery.")
 	cmd.Flags().BoolVarP(&config.skipDiscovery, "skip-discovery", "z", false, "Don't try to retrieve kubelet creds from metadata. Use the supplied parameters instead.")
 
 	return cmd
