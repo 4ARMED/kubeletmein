@@ -95,6 +95,8 @@ func bootstrapCmd() *cobra.Command {
 				if err != nil {
 					return fmt.Errorf("unable to write kubelet key to file: %v", err)
 				}
+			} else {
+				logger.Info("skipping discovery")
 			}
 
 			logger.Info("generating bootstrap-kubeconfig file at: %v", config.bootstrapConfig)
