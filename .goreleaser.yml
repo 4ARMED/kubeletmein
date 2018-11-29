@@ -1,7 +1,7 @@
 builds:
   - main: ./cmd/kubeletmein
     binary: kubeletmein
-  - env:
+    env:
     - CGO_ENABLED=0
 archive:
   replacements:
