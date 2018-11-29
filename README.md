@@ -8,6 +8,8 @@ This is a simple penetration testing tool which takes advantage of public cloud 
 
 It reads kubelet credentials from the cloud provider metadata and configures a kubeconfig file that you can use with `kubectl` to access the API.
 
+There's more info in our blog post at [https://www.4armed.com/blog/hacking-google-kubernetes-engine-part1/](https://www.4armed.com/blog/hacking-google-kubernetes-engine-part1/).
+
 ## Supported providers
 
 ### GKE
