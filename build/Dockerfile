@@ -2,8 +2,7 @@ FROM golang:alpine AS build
 
 RUN apk add --no-cache \
       git \
-      curl \
-      openssl
+      curl
 
 RUN mkdir -p /out/usr/local/bin
 
@@ -20,6 +19,9 @@ RUN curl -sL https://storage.googleapis.com/kubernetes-release/release/$(curl -s
 
 FROM google/cloud-sdk:alpine
 LABEL maintainer="Marc Wickenden <marc@4armed.com>"
+
+RUN apk add --no-cache \
+      openssl
 
 RUN addgroup -S app && adduser -S app -G app
 
