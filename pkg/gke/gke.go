@@ -16,7 +16,6 @@
 package gke
 
 import (
-	"github.com/kubicorn/kubicorn/pkg/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -29,6 +28,7 @@ type Config struct {
 	kubeConfig      string
 	certDir         string
 	nodeName        string
+	skipDiscovery   bool
 }
 
 // Command represents the gke command
@@ -38,9 +38,7 @@ func Command() *cobra.Command {
 		Use:   "gke",
 		Short: "Retrieve kubelet creds in GKE",
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := cmd.Help(); err != nil {
-				logger.Debug("ignoring err %q", err.Error())
-			}
+
 		},
 	}
 

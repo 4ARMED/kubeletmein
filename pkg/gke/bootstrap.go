@@ -47,49 +47,54 @@ func bootstrapCmd() *cobra.Command {
 		Use:   "bootstrap",
 		Short: "Write out a bootstrap kubeconfig for the kubelet LoadClientCert function",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			kubeenv, err := c.InstanceAttributeValue("kube-env")
-			if err != nil {
-				return err
-			}
 
-			err = yaml.Unmarshal([]byte(kubeenv), &k)
-			if err != nil {
-				return fmt.Errorf("unable to parse YAML from kube-env: %v", err)
-			}
+			// Check if we are skipping discovery via kube-env.
+			// TODO: Code checks for cert/key params if skip discovery specified
+			if !config.skipDiscovery {
+				kubeenv, err := c.InstanceAttributeValue("kube-env")
+				if err != nil {
+					return err
+				}
 
-			logger.Debug("decoding ca cert")
-			caCert, err := base64.StdEncoding.DecodeString(k.CaCert)
-			if err != nil {
-				return fmt.Errorf("unable to decode ca cert: %v", err)
-			}
-			logger.Info("writing ca cert to: %v", config.caCertPath)
-			err = ioutil.WriteFile(config.caCertPath, caCert, 0644)
-			if err != nil {
-				return fmt.Errorf("unable to write ca cert to file: %v", err)
-			}
+				err = yaml.Unmarshal([]byte(kubeenv), &k)
+				if err != nil {
+					return fmt.Errorf("unable to parse YAML from kube-env: %v", err)
+				}
 
-			logger.Debug("decoding kubelet cert")
-			kubeletCert, err := base64.StdEncoding.DecodeString(k.KubeletCert)
-			if err != nil {
-				return fmt.Errorf("unable to decode kubelet cert: %v", err)
-			}
+				logger.Debug("decoding ca cert")
+				caCert, err := base64.StdEncoding.DecodeString(k.CaCert)
+				if err != nil {
+					return fmt.Errorf("unable to decode ca cert: %v", err)
+				}
+				logger.Info("writing ca cert to: %v", config.caCertPath)
+				err = ioutil.WriteFile(config.caCertPath, caCert, 0644)
+				if err != nil {
+					return fmt.Errorf("unable to write ca cert to file: %v", err)
+				}
 
-			logger.Info("writing kubelet cert to: %v", config.kubeletCertPath)
-			err = ioutil.WriteFile(config.kubeletCertPath, kubeletCert, 0644)
-			if err != nil {
-				return fmt.Errorf("unable to write kubelet cert to file: %v", err)
-			}
+				logger.Debug("decoding kubelet cert")
+				kubeletCert, err := base64.StdEncoding.DecodeString(k.KubeletCert)
+				if err != nil {
+					return fmt.Errorf("unable to decode kubelet cert: %v", err)
+				}
 
-			logger.Debug("decoding kubelet key")
-			kubeletKey, err := base64.StdEncoding.DecodeString(k.KubeletKey)
-			if err != nil {
-				return fmt.Errorf("unable to decode kubelet key: %v", err)
-			}
+				logger.Info("writing kubelet cert to: %v", config.kubeletCertPath)
+				err = ioutil.WriteFile(config.kubeletCertPath, kubeletCert, 0644)
+				if err != nil {
+					return fmt.Errorf("unable to write kubelet cert to file: %v", err)
+				}
 
-			logger.Info("writing kubelet key to: %v", config.kubeletKeyPath)
-			err = ioutil.WriteFile(config.kubeletKeyPath, kubeletKey, 0644)
-			if err != nil {
-				return fmt.Errorf("unable to write kubelet key to file: %v", err)
+				logger.Debug("decoding kubelet key")
+				kubeletKey, err := base64.StdEncoding.DecodeString(k.KubeletKey)
+				if err != nil {
+					return fmt.Errorf("unable to decode kubelet key: %v", err)
+				}
+
+				logger.Info("writing kubelet key to: %v", config.kubeletKeyPath)
+				err = ioutil.WriteFile(config.kubeletKeyPath, kubeletKey, 0644)
+				if err != nil {
+					return fmt.Errorf("unable to write kubelet key to file: %v", err)
+				}
 			}
 
 			logger.Info("generating bootstrap-kubeconfig file at: %v", config.bootstrapConfig)
@@ -114,7 +119,7 @@ func bootstrapCmd() *cobra.Command {
 			}
 
 			// Marshal to disk
-			err = clientcmd.WriteToFile(kubeconfigData, config.bootstrapConfig)
+			err := clientcmd.WriteToFile(kubeconfigData, config.bootstrapConfig)
 			if err != nil {
 				return fmt.Errorf("unable to write bootstrap-kubeconfig file: %v", err)
 			}
@@ -130,6 +135,7 @@ func bootstrapCmd() *cobra.Command {
 	cmd.Flags().StringVarP(&config.caCertPath, "ca-cert", "a", "ca-certificates.crt", "The filename to write the apiserver CA cert to")
 	cmd.Flags().StringVarP(&config.kubeletCertPath, "kubelet-cert", "c", "kubelet.crt", "The filename to write the kubelet cert to")
 	cmd.Flags().StringVarP(&config.kubeletKeyPath, "kubelet-key", "k", "kubelet.key", "The filename to write the kubelet key to")
+	cmd.Flags().BoolVarP(&config.skipDiscovery, "skip-discovery", "z", false, "Don't try to retrieve kubelet creds from metadata. Use the supplied parameters instead.")
 
 	return cmd
 }
