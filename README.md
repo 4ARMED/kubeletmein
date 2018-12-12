@@ -62,7 +62,7 @@ Then we download the certificate and configure `kubeconfig`.
 Now you can use the kubeconfig, as it suggests.
 
 ```
-kubectl --kubeconfig get pods
+kubectl --kubeconfig kubeconfig get pods
 ```
 
 ### EKS
