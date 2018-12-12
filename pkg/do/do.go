@@ -13,37 +13,25 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package gke
+package do
 
 import (
 	"github.com/spf13/cobra"
 )
 
-// Config holds configuration values for GKE operations
-type Config struct {
-	bootstrapConfig string
-	caCertPath      string
-	kubeletKeyPath  string
-	kubeletCertPath string
-	kubeConfig      string
-	certDir         string
-	nodeName        string
-	skipDiscovery   bool
-	kubeAPIServer   string
-}
-
 // Command represents the gke command
 func Command() *cobra.Command {
 
 	cmd := &cobra.Command{
-		Use:   "gke",
-		Short: "Retrieve kubelet creds in GKE",
+		Use:   "do",
+		Short: "Retrieve kubelet creds in Digital Ocean",
 		Run: func(cmd *cobra.Command, args []string) {
 
 		},
 	}
 
 	cmd.AddCommand(bootstrapCmd())
+	// cmd.AddCommand(generateCmd())
 
 	return cmd
 

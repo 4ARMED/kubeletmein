@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/4armed/kubeletmein/pkg/common"
+	"github.com/4armed/kubeletmein/pkg/do"
 	"github.com/4armed/kubeletmein/pkg/gke"
 	"github.com/kubicorn/kubicorn/pkg/logger"
 	"github.com/spf13/cobra"
@@ -40,6 +42,8 @@ func main() {
 }
 
 func init() {
+	rootCmd.AddCommand(common.GenerateCmd())
+	rootCmd.AddCommand(do.Command())
 	rootCmd.AddCommand(gke.Command())
 
 	rootCmd.PersistentFlags().IntVarP(&logger.Level, "verbose", "v", 3, "set log level, use 0 to silence, 4 for debugging")
