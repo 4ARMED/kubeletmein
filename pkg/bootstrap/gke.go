@@ -134,7 +134,7 @@ func bootstrapGkeCmd(c *config.Config) *cobra.Command {
 			}
 
 			logger.Info("wrote bootstrap-kubeconfig")
-			logger.Info("now generate a new node certificate with: kubeletmein gke generate")
+			logger.Info("now generate a new node certificate with: kubeletmein generate")
 
 			return err
 		},
