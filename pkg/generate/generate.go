@@ -13,42 +13,43 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package gke
+package generate
 
 import (
 	"fmt"
 
+	"github.com/4armed/kubeletmein/pkg/config"
 	"github.com/kubicorn/kubicorn/pkg/logger"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/kubernetes/pkg/kubelet/certificate/bootstrap"
 )
 
-// generateCmd represents the generate command
-func generateCmd() *cobra.Command {
-	config := &Config{}
+// Command represents the generate command
+func Command() *cobra.Command {
+	config := &config.Config{}
 
 	cmd := &cobra.Command{
 		Use:   "generate",
 		Short: "Generate valid cert and kubeconfig from bootstrap config",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			logger.Info("using bootstrap-config to request new cert for node: %v", config.nodeName)
-			err := bootstrap.LoadClientCert(config.kubeConfig, config.bootstrapConfig, config.certDir, types.NodeName(config.nodeName))
+			logger.Info("using bootstrap-config to request new cert for node: %v", config.NodeName)
+			err := bootstrap.LoadClientCert(config.KubeConfig, config.BootstrapConfig, config.CertDir, types.NodeName(config.NodeName))
 			if err != nil {
 				return fmt.Errorf("unable to create certificate: %v", err)
 			}
 
 			logger.Info("got new cert and wrote kubeconfig")
-			logger.Info("now try: kubectl --kubeconfig %v get pods", config.kubeConfig)
+			logger.Info("now try: kubectl --kubeconfig %v get pods", config.KubeConfig)
 
 			return err
 		},
 	}
 
-	cmd.Flags().StringVarP(&config.bootstrapConfig, "bootstrap-kubeconfig", "b", "bootstrap-kubeconfig", "The filename to write the bootstrap kubeconfig to")
-	cmd.Flags().StringVarP(&config.kubeConfig, "kubeconfig", "k", "kubeconfig", "The filename to write the kubeconfig to")
-	cmd.Flags().StringVarP(&config.certDir, "cert-dir", "d", "pki", "Directory into which the new cert will be written")
-	cmd.Flags().StringVarP(&config.nodeName, "node-name", "n", "", "Node name to use for CSR")
+	cmd.Flags().StringVarP(&config.BootstrapConfig, "bootstrap-kubeconfig", "b", "bootstrap-kubeconfig", "The filename to write the bootstrap kubeconfig to")
+	cmd.Flags().StringVarP(&config.KubeConfig, "kubeconfig", "k", "kubeconfig", "The filename to write the kubeconfig to")
+	cmd.Flags().StringVarP(&config.CertDir, "cert-dir", "d", "pki", "Directory into which the new cert will be written")
+	cmd.Flags().StringVarP(&config.NodeName, "node-name", "n", "", "Node name to use for CSR")
 	cmd.MarkFlagRequired("node-name")
 
 	return cmd

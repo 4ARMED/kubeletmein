@@ -1,2 +1,4 @@
 kubeletmein
 dist/**
+bootstrap-kubeconfig
+ca-certificates.crt
