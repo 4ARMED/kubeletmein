@@ -16,10 +16,8 @@
 package eks
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -41,16 +39,17 @@ func Command() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "eks",
-		Short: "Generate valid kubeconfig to impersonate current node in EKS. This also downloads aws-iam-authenticator.",
+		Short: "Generate valid kubeconfig to impersonate current node in EKS.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			logger.Info("downloading aws-iam-authenticator and generating kubeconfig for current EKS node")
+			logger.Info("generating kubeconfig for current EKS node")
 			err := doCommand(config)
 			if err != nil {
 				return fmt.Errorf("unable to generate kubeconfig: %v", err)
 			}
 
 			logger.Info("wrote kubeconfig")
-			logger.Info("now try: kubectl --kubeconfig %v get pods", config.KubeConfig)
+			logger.Info("to use the kubeconfig, download aws-iam-authenticator to the current directory and make it executable by following the instructions at https://docs.aws.amazon.com/eks/latest/userguide/install-aws-iam-authenticator.html")
+			logger.Info("then try: kubectl --kubeconfig %v get pods", config.KubeConfig)
 
 			return err
 		},
@@ -142,77 +141,6 @@ func parseUserData(userData string) (*eksKubeConfigInfo, error) {
 	return result, nil
 }
 
-type GitHubReleaseInfo struct {
-	Assets []GitHubAssetInfo `json:"assets"`
-}
-
-type GitHubAssetInfo struct {
-	Name        string `json:"name"`
-	DownloadURL string `json:"browser_download_url"`
-}
-
-func downloadAwsIamAuthenticator() (string, error) {
-	logger.Info("downloading aws-iam-authenticator...")
-
-	logger.Info("fetching information about aws-iam-authenticator latest release")
-	// find latest release of aws-iam-authenticator
-	releaseInfoURL := "https://api.github.com/repos/kubernetes-sigs/aws-iam-authenticator/releases/latest"
-	resp, err := http.Get(releaseInfoURL)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	releaseInfo := GitHubReleaseInfo{}
-	err = json.NewDecoder(resp.Body).Decode(&releaseInfo)
-	if err != nil {
-		return "", err
-	}
-
-	re := regexp.MustCompile(`^aws-iam-authenticator_.*_linux_amd64$`)
-	downloadURL := ""
-	for _, a := range releaseInfo.Assets {
-		if re.MatchString(a.Name) {
-			downloadURL = a.DownloadURL
-			break
-		}
-	}
-
-	if downloadURL == "" {
-		return "", fmt.Errorf("Cannot parse aws-iam-authenticator release information")
-	}
-
-	logger.Info("downloading aws-iam-authenticator from %v", downloadURL)
-	// get the data
-	resp, err = http.Get(downloadURL)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	// construct file path for the downloaded file
-	dir, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-	filepath := filepath.Join(dir, "aws-iam-authenticator")
-
-	// create the file, and make it executable
-	out, err := os.OpenFile(filepath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
-	if err != nil {
-		return "", err
-	}
-	defer out.Close()
-
-	// write the body to file
-	_, err = io.Copy(out, resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	return filepath, err
-}
-
 func kubeConfigTemplate() string {
 	// template from https://github.com/awslabs/amazon-eks-ami/blob/master/files/kubelet-kubeconfig
 	// same information here: https://docs.aws.amazon.com/eks/latest/userguide/create-kubeconfig.html
@@ -260,10 +188,12 @@ func doCommand(c *config.Config) error {
 		return err
 	}
 
-	authenticatorPath, err := downloadAwsIamAuthenticator()
+	// construct file path for aws-iam-authenticator - assume it will be downloaded to the current dir
+	dir, err := os.Getwd()
 	if err != nil {
 		return err
 	}
+	authenticatorPath := filepath.Join(dir, "aws-iam-authenticator")
 
 	// template from https://github.com/awslabs/amazon-eks-ami/blob/master/files/kubelet-kubeconfig
 	// same information here: https://docs.aws.amazon.com/eks/latest/userguide/create-kubeconfig.html

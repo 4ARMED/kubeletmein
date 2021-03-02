@@ -71,19 +71,19 @@ On EKS we can impersonate current node in a single step using IAM authentication
 
 ```
 ~ $ kubeletmein eks
-2021-03-01T21:53:36Z [ℹ]  downloading aws-iam-authenticator and generating kubeconfig for current EKS node
-2021-03-01T21:53:36Z [ℹ]  fetching cluster information from user-data from the metadata service
-2021-03-01T21:53:36Z [ℹ]  getting IMDSv2 token
-2021-03-01T21:53:36Z [ℹ]  getting user-data
-2021-03-01T21:53:36Z [ℹ]  downloading aws-iam-authenticator...
-2021-03-01T21:53:36Z [ℹ]  fetching information about aws-iam-authenticator latest release
-2021-03-01T21:53:36Z [ℹ]  downloading aws-iam-authenticator from https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v0.5.2/aws-iam-authenticator_0.5.2_linux_amd64
-2021-03-01T21:53:37Z [ℹ]  generating EKS node kubeconfig file at: kubeconfig
-2021-03-01T21:53:37Z [ℹ]  wrote kubeconfig
-2021-03-01T21:53:37Z [ℹ]  now try: kubectl --kubeconfig kubeconfig get pods
+2021-03-02T21:37:59Z [ℹ]  generating kubeconfig for current EKS node
+2021-03-02T21:37:59Z [ℹ]  fetching cluster information from user-data from the metadata service
+2021-03-02T21:37:59Z [ℹ]  getting IMDSv2 token
+2021-03-02T21:37:59Z [ℹ]  getting user-data
+2021-03-02T21:37:59Z [ℹ]  generating EKS node kubeconfig file at: kubeconfig
+2021-03-02T21:37:59Z [ℹ]  wrote kubeconfig
+2021-03-02T21:37:59Z [ℹ]  to use the kubeconfig, download aws-iam-authenticator to the current directory and make it executable by following the instructions at https://docs.aws.amazon.com/eks/latest/userguide/install-aws-iam-authenticator.html
+2021-03-02T21:37:59Z [ℹ]  then try: kubectl --kubeconfig kubeconfig get pods
 ```
 
-Now you can use the kubeconfig, as it suggests.
+Now you can use the kubeconfig, as it suggests. Follow the instructions at
+https://docs.aws.amazon.com/eks/latest/userguide/install-aws-iam-authenticator.html to download `aws-iam-authenticator`
+(and make it executable), then run:
 
 ```
 kubectl --kubeconfig kubeconfig get pods
