@@ -53,14 +53,13 @@ func bootstrapGkeCmd(c *config.Config) *cobra.Command {
 
 			if c.MetadataFile == "" {
 				logger.Info("fetching kubelet creds from metadata service")
-				ke, err := m.InstanceAttributeValue("kube-env")
+				kubeenv, err = fetchMetadataFromService(m)
 				if err != nil {
 					return err
 				}
-				kubeenv = []byte(ke)
 			} else {
 				logger.Info("fetching kubelet creds from file: %v", c.MetadataFile)
-				kubeenv, err = ioutil.ReadFile(c.MetadataFile)
+				kubeenv, err = fetchMetadataFromFile(c.MetadataFile)
 				if err != nil {
 					return err
 				}
@@ -144,4 +143,22 @@ func bootstrapGkeCmd(c *config.Config) *cobra.Command {
 	cmd.Flags().StringVarP(&c.KubeletKeyPath, "kubelet-key", "k", "kubelet.key", "The filename to write the kubelet key to")
 
 	return cmd
+}
+
+func fetchMetadataFromService(m *metadata.Client) ([]byte, error) {
+	ke, err := m.InstanceAttributeValue("kube-env")
+	if err != nil {
+		return nil, err
+	}
+
+	return []byte(ke), nil
+}
+
+func fetchMetadataFromFile(metadataFile string) ([]byte, error) {
+	kubeenv, err := ioutil.ReadFile(metadataFile)
+	if err != nil {
+		return nil, err
+	}
+
+	return kubeenv, nil
 }

@@ -15,7 +15,7 @@
 
 package config
 
-// Config holds configuration values for GKE operations
+// Config holds configuration values for the various operations
 type Config struct {
 	BootstrapConfig string
 	CaCertPath      string
