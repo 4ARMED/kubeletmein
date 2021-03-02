@@ -1,4 +1,4 @@
-FROM golang:alpine AS build
+FROM golang:1.16-alpine AS build
 
 RUN apk add --no-cache \
       git \
@@ -17,7 +17,7 @@ WORKDIR /out
 RUN curl -sL https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o usr/local/bin/kubectl && \
     chmod +x usr/local/bin/kubectl
 
-FROM google/cloud-sdk:alpine
+FROM google/cloud-sdk:239.0.0-alpine
 LABEL maintainer="Marc Wickenden <marc@4armed.com>"
 
 RUN apk add --no-cache \
