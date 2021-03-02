@@ -1,18 +1,3 @@
-// Copyright © 2018 Marc Wickenden <marc@4armed.com>
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-//
-// You should have received a copy of the GNU Affero General Public License
-// along with this program. If not, see <http://www.gnu.org/licenses/>.
-
 package bootstrap
 
 import (
@@ -53,20 +38,16 @@ func bootstrapDoCmd(c *config.Config) *cobra.Command {
 		Short:            "Write out a bootstrap kubeconfig for the kubelet LoadClientCert function on Digital Ocean",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
+			client := &http.Client{}
+
 			if c.MetadataFile == "" {
-				logger.Info("fetching kubelet creds from metadata service")
-				resp, err := http.Get("http://" + metadataIP + "/metadata/v1/user-data")
-				if err != nil {
-					panic(err)
-				}
-				defer resp.Body.Close()
-				userData, err = ioutil.ReadAll(resp.Body)
+				userData, err = fetchMetadataFromDOService(client)
 				if err != nil {
 					return err
 				}
 			} else {
 				logger.Info("fetching kubelet creds from file: %v", c.MetadataFile)
-				userData, err = ioutil.ReadFile(c.MetadataFile)
+				userData, err = fetchMetadataFromFile(c.MetadataFile)
 				if err != nil {
 					return err
 				}
@@ -123,4 +104,19 @@ func bootstrapDoCmd(c *config.Config) *cobra.Command {
 	}
 
 	return cmd
+}
+
+func fetchMetadataFromDOService(client *http.Client) ([]byte, error) {
+	logger.Info("fetching kubelet creds from metadata service")
+	resp, err := client.Get("http://" + metadataIP + "/metadata/v1/user-data")
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+	userData, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return userData, nil
 }

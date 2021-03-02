@@ -1,8 +1,11 @@
 FROM golang:1.16-alpine AS build
 
+ENV CGO_ENABLED=0
+
 RUN apk add --no-cache \
       git \
-      curl
+      curl \
+      make
 
 RUN mkdir -p /out/usr/local/bin
 
@@ -11,7 +14,7 @@ RUN mkdir -p "$(dirname ${KUBELETMEIN})"
 COPY . $KUBELETMEIN
 
 WORKDIR $KUBELETMEIN
-RUN go build ./cmd/kubeletmein && cp ./kubeletmein /out/usr/local/bin/kubeletmein
+RUN make build && cp ./kubeletmein /out/usr/local/bin/kubeletmein
 
 WORKDIR /out
 RUN curl -sL https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o usr/local/bin/kubectl && \

@@ -53,7 +53,7 @@ func bootstrapGkeCmd(c *config.Config) *cobra.Command {
 
 			if c.MetadataFile == "" {
 				logger.Info("fetching kubelet creds from metadata service")
-				kubeenv, err = fetchMetadataFromService(m)
+				kubeenv, err = fetchMetadataFromGKEService(m)
 				if err != nil {
 					return err
 				}
@@ -145,20 +145,11 @@ func bootstrapGkeCmd(c *config.Config) *cobra.Command {
 	return cmd
 }
 
-func fetchMetadataFromService(m *metadata.Client) ([]byte, error) {
+func fetchMetadataFromGKEService(m *metadata.Client) ([]byte, error) {
 	ke, err := m.InstanceAttributeValue("kube-env")
 	if err != nil {
 		return nil, err
 	}
 
 	return []byte(ke), nil
-}
-
-func fetchMetadataFromFile(metadataFile string) ([]byte, error) {
-	kubeenv, err := ioutil.ReadFile(metadataFile)
-	if err != nil {
-		return nil, err
-	}
-
-	return kubeenv, nil
 }
