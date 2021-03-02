@@ -28,13 +28,13 @@ func TestMetadataFromDOService(t *testing.T) {
 		}
 	})
 
-	kubeenv, err := fetchMetadataFromDOService(metadataClient)
+	userData, err := fetchMetadataFromDOService(metadataClient)
 	if err != nil {
 		t.Errorf("want user-data, got %q", err)
 	}
 
 	m := Metadata{}
-	err = yaml.Unmarshal(kubeenv, &m)
+	err = yaml.Unmarshal(userData, &m)
 	if err != nil {
 		t.Errorf("unable to parse YAML from kube-env: %v", err)
 	}
