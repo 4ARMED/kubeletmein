@@ -26,7 +26,7 @@ type Kubeenv struct {
 
 // BootstrapCmd represents the bootstrap command
 func BootstrapCmd(c *config.Config) *cobra.Command {
-	m := metadata.NewClient(&http.Client{})
+	metadataClient := metadata.NewClient(&http.Client{})
 	k := Kubeenv{}
 	var kubeenv []byte
 	var err error
@@ -39,7 +39,7 @@ func BootstrapCmd(c *config.Config) *cobra.Command {
 
 			if c.MetadataFile == "" {
 				logger.Info("fetching kubelet creds from metadata service")
-				kubeenv, err = fetchMetadataFromGKEService(m)
+				kubeenv, err = fetchMetadataFromGKEService(metadataClient)
 				if err != nil {
 					return err
 				}
@@ -131,8 +131,8 @@ func BootstrapCmd(c *config.Config) *cobra.Command {
 	return cmd
 }
 
-func fetchMetadataFromGKEService(m *metadata.Client) ([]byte, error) {
-	ke, err := m.InstanceAttributeValue("kube-env")
+func fetchMetadataFromGKEService(metadataClient *metadata.Client) ([]byte, error) {
+	ke, err := metadataClient.InstanceAttributeValue("kube-env")
 	if err != nil {
 		return nil, err
 	}

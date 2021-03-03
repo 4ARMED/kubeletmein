@@ -3,11 +3,11 @@ package do
 import (
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os"
 
 	"github.com/4armed/kubeletmein/pkg/common"
 	"github.com/4armed/kubeletmein/pkg/config"
+	metadata "github.com/digitalocean/go-metadata"
 	"github.com/kubicorn/kubicorn/pkg/logger"
 	"github.com/spf13/cobra"
 	yaml "gopkg.in/yaml.v2"
@@ -28,6 +28,7 @@ type Metadata struct {
 
 // BootstrapCmd represents the bootstrap command
 func BootstrapCmd(c *config.Config) *cobra.Command {
+	metadataClient := metadata.NewClient()
 	m := Metadata{}
 	userData := []byte{}
 	var kubeMaster string
@@ -39,10 +40,8 @@ func BootstrapCmd(c *config.Config) *cobra.Command {
 		Short:            "Write out a bootstrap kubeconfig for the kubelet LoadClientCert function on Digital Ocean",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			client := &http.Client{}
-
 			if c.MetadataFile == "" {
-				userData, err = fetchMetadataFromDOService(client)
+				userData, err = fetchMetadataFromDOService(metadataClient)
 				if err != nil {
 					return err
 				}
@@ -107,18 +106,13 @@ func BootstrapCmd(c *config.Config) *cobra.Command {
 	return cmd
 }
 
-func fetchMetadataFromDOService(client *http.Client) ([]byte, error) {
+func fetchMetadataFromDOService(metadataClient *metadata.Client) ([]byte, error) {
 	logger.Info("fetching kubelet creds from metadata service")
 
-	resp, err := client.Get("http://" + metadataIP + "/metadata/v1/user-data")
-	if err != nil {
-		panic(err)
-	}
-	defer resp.Body.Close()
-	userData, err := ioutil.ReadAll(resp.Body)
+	userData, err := metadataClient.UserData()
 	if err != nil {
 		return nil, err
 	}
 
-	return userData, nil
+	return []byte(userData), nil
 }
