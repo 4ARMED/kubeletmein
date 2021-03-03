@@ -1,8 +1,11 @@
 name: docker-hub-push
 on:
-  release:
-    types:
-      - published
+  # release:
+  #   types:
+  #     - published
+  push:
+    tags:
+      - '*'
 
 env:
   IMAGE_NAME: 4armed/kubeletmein
