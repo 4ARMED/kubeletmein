@@ -1,4 +1,4 @@
-package bootstrap
+package do
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/4armed/kubeletmein/pkg/common"
 	"github.com/4armed/kubeletmein/pkg/config"
 	"github.com/kubicorn/kubicorn/pkg/logger"
 	"github.com/spf13/cobra"
@@ -25,8 +26,8 @@ type Metadata struct {
 	KubeMaster   string `yaml:"k8saas_master_domain_name"`
 }
 
-// bootstrapCmd represents the bootstrap command
-func bootstrapDoCmd(c *config.Config) *cobra.Command {
+// BootstrapCmd represents the bootstrap command
+func BootstrapCmd(c *config.Config) *cobra.Command {
 	m := Metadata{}
 	userData := []byte{}
 	var kubeMaster string
@@ -47,7 +48,7 @@ func bootstrapDoCmd(c *config.Config) *cobra.Command {
 				}
 			} else {
 				logger.Info("fetching kubelet creds from file: %v", c.MetadataFile)
-				userData, err = fetchMetadataFromFile(c.MetadataFile)
+				userData, err = common.FetchMetadataFromFile(c.MetadataFile)
 				if err != nil {
 					return err
 				}
@@ -108,6 +109,7 @@ func bootstrapDoCmd(c *config.Config) *cobra.Command {
 
 func fetchMetadataFromDOService(client *http.Client) ([]byte, error) {
 	logger.Info("fetching kubelet creds from metadata service")
+
 	resp, err := client.Get("http://" + metadataIP + "/metadata/v1/user-data")
 	if err != nil {
 		panic(err)

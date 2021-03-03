@@ -1,4 +1,4 @@
-package bootstrap
+package do
 
 import (
 	"bytes"
@@ -7,6 +7,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/4armed/kubeletmein/pkg/common"
 	"github.com/4armed/kubeletmein/pkg/mocks"
 	"github.com/stretchr/testify/assert"
 	yaml "gopkg.in/yaml.v2"
@@ -48,12 +49,12 @@ func TestMetadataFromDOFile(t *testing.T) {
 	if err != nil {
 		t.Errorf("couldn't create temp file for user-data: %v", err)
 	}
-	_, err = tempFile.WriteString(exampleKubeEnv)
+	_, err = tempFile.WriteString(exampleUserData)
 	if err != nil {
 		t.Errorf("couldn't write user-data to temp file: %v", err)
 	}
 
-	kubeenv, err := fetchMetadataFromFile(tempFile.Name())
+	kubeenv, err := common.FetchMetadataFromFile(tempFile.Name())
 	if err != nil {
 		t.Errorf("want user-data, got %q", err)
 	}
