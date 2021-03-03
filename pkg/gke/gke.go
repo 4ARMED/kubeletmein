@@ -1,19 +1,4 @@
-// Copyright © 2018 Marc Wickenden <marc@4armed.com>
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-//
-// You should have received a copy of the GNU Affero General Public License
-// along with this program. If not, see <http://www.gnu.org/licenses/>.
-
-package bootstrap
+package gke
 
 import (
 	"encoding/base64"
@@ -22,6 +7,7 @@ import (
 	"net/http"
 
 	"cloud.google.com/go/compute/metadata"
+	"github.com/4armed/kubeletmein/pkg/common"
 	"github.com/4armed/kubeletmein/pkg/config"
 	"github.com/kubicorn/kubicorn/pkg/logger"
 	"github.com/spf13/cobra"
@@ -38,9 +24,9 @@ type Kubeenv struct {
 	KubeMasterName string `yaml:"KUBERNETES_MASTER_NAME"`
 }
 
-// bootstrapCmd represents the bootstrap command
-func bootstrapGkeCmd(c *config.Config) *cobra.Command {
-	m := metadata.NewClient(&http.Client{})
+// BootstrapCmd represents the bootstrap command
+func BootstrapCmd(c *config.Config) *cobra.Command {
+	metadataClient := metadata.NewClient(&http.Client{})
 	k := Kubeenv{}
 	var kubeenv []byte
 	var err error
@@ -53,13 +39,13 @@ func bootstrapGkeCmd(c *config.Config) *cobra.Command {
 
 			if c.MetadataFile == "" {
 				logger.Info("fetching kubelet creds from metadata service")
-				kubeenv, err = fetchMetadataFromGKEService(m)
+				kubeenv, err = fetchMetadataFromGKEService(metadataClient)
 				if err != nil {
 					return err
 				}
 			} else {
 				logger.Info("fetching kubelet creds from file: %v", c.MetadataFile)
-				kubeenv, err = fetchMetadataFromFile(c.MetadataFile)
+				kubeenv, err = common.FetchMetadataFromFile(c.MetadataFile)
 				if err != nil {
 					return err
 				}
@@ -145,8 +131,8 @@ func bootstrapGkeCmd(c *config.Config) *cobra.Command {
 	return cmd
 }
 
-func fetchMetadataFromGKEService(m *metadata.Client) ([]byte, error) {
-	ke, err := m.InstanceAttributeValue("kube-env")
+func fetchMetadataFromGKEService(metadataClient *metadata.Client) ([]byte, error) {
+	ke, err := metadataClient.InstanceAttributeValue("kube-env")
 	if err != nil {
 		return nil, err
 	}

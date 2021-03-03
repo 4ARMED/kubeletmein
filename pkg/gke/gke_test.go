@@ -1,4 +1,4 @@
-package bootstrap
+package gke
 
 import (
 	"bytes"
@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"cloud.google.com/go/compute/metadata"
+	"github.com/4armed/kubeletmein/pkg/common"
 	"github.com/4armed/kubeletmein/pkg/mocks"
 	"github.com/stretchr/testify/assert"
 	yaml "gopkg.in/yaml.v2"
@@ -56,7 +57,7 @@ func TestMetadataFromGKEFile(t *testing.T) {
 		t.Errorf("couldn't write kube-env to temp file: %v", err)
 	}
 
-	kubeenv, err := fetchMetadataFromFile(tempFile.Name())
+	kubeenv, err := common.FetchMetadataFromFile(tempFile.Name())
 	if err != nil {
 		t.Errorf("want kubeenv, got %q", err)
 	}
