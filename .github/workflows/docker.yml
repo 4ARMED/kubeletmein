@@ -20,7 +20,7 @@ jobs:
         run: echo ${{ secrets.DOCKER_BUILD_PASSWORD }} | docker login -u ${{ secrets.DOCKER_BUILD_USERNAME }} --password-stdin
       - name: Get version
         id: vars
-        run: echo ::set-output name=tag::$(echo ${GITHUB_REF#refs/heads/})
+        run: echo ::set-output name=tag::$(echo ${GITHUB_REF#refs/tags/})
       - name: Build the tagged Docker image
         run: docker build . -f Dockerfile --tag ${{ env.IMAGE_NAME }}:${{steps.vars.outputs.tag}}
       - name: Push the tagged Docker image
