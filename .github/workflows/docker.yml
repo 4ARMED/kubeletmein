@@ -1,0 +1,28 @@
+name: Push to Docker Hub
+on:
+  release:
+    types:
+      - created
+      
+env:
+  IMAGE_NAME: 4armed/kubeletmein
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Login to Docker Hub
+        run: echo ${{ secrets.DOCKER_BUILD_PASSWORD }} | docker login -u ${{ secrets.DOCKER_BUILD_USERNAME }} --password-stdin
+      - name: Get version
+        id: vars
+        run: echo ::set-output name=tag::$(echo ${GITHUB_REF#refs/heads/})
+      - name: Build the tagged Docker image
+        run: docker build . -f Dockerfile --tag ${{ env.IMAGE_NAME }}:${{steps.vars.outputs.tag}}
+      - name: Push the tagged Docker image
+        run: docker push ${{ env.IMAGE_NAME }}:${{steps.vars.outputs.tag}}
+      - name: Tag image as latest
+        run: docker tag ${{ env.IMAGE_NAME }}:${{steps.vars.outputs.tag}} ${{ env.IMAGE_NAME }}:latest
+      - name: Push latest
+        run: docker push ${{ env.IMAGE_NAME }}:latest
