@@ -65,13 +65,13 @@ func TestMetadataFromDOFile(t *testing.T) {
 		t.Errorf("couldn't remove tempFile: %v", err)
 	}
 
-	k := Kubeenv{}
-	err = yaml.Unmarshal(kubeenv, &k)
+	m := Metadata{}
+	err = yaml.Unmarshal(kubeenv, &m)
 	if err != nil {
 		t.Errorf("unable to parse YAML from kube-env: %v", err)
 	}
 
-	assert.Equal(t, "1.1.1.1", k.KubeMasterName, "they should be equal")
+	assert.Equal(t, "1.1.1.1", m.KubeMaster, "they should be equal")
 }
 
 func TestBootstrapDOCmd(t *testing.T) {
