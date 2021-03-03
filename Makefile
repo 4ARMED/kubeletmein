@@ -7,4 +7,8 @@ clean:
 	@rm -f ${EXECUTABLE}
 
 test:
-	go test -v ./pkg/bootstrap
+	go test -v ./pkg/do
+	go test -v ./pkg/gke
+
+docker:
+	docker build -f build/Dockerfile . -t ${EXECUTABLE}
