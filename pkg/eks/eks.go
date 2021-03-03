@@ -34,28 +34,28 @@ const (
 	metadataIP = "169.254.169.254"
 )
 
-func Command() *cobra.Command {
-	config := &config.Config{}
+// Command runs the eks command
+func Command(c *config.Config) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "eks",
-		Short: "Generate valid kubeconfig to impersonate current node in EKS.",
+		Short: "Generate a kubeconfig on EKS.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			logger.Info("generating kubeconfig for current EKS node")
-			err := doCommand(config)
+			err := doCommand(c)
 			if err != nil {
 				return fmt.Errorf("unable to generate kubeconfig: %v", err)
 			}
 
 			logger.Info("wrote kubeconfig")
 			logger.Info("to use the kubeconfig, download aws-iam-authenticator to the current directory and make it executable by following the instructions at https://docs.aws.amazon.com/eks/latest/userguide/install-aws-iam-authenticator.html")
-			logger.Info("then try: kubectl --kubeconfig %v get pods", config.KubeConfig)
+			logger.Info("then try: kubectl --kubeconfig %v get pods", c.KubeConfig)
 
 			return err
 		},
 	}
 
-	cmd.Flags().StringVarP(&config.KubeConfig, "kubeconfig", "k", "kubeconfig", "The filename to write the kubeconfig to")
+	cmd.Flags().StringVarP(&c.KubeConfig, "kubeconfig", "k", "kubeconfig", "The filename to write the kubeconfig to")
 
 	return cmd
 }

@@ -19,9 +19,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/4armed/kubeletmein/pkg/bootstrap"
+	"github.com/4armed/kubeletmein/pkg/config"
+	"github.com/4armed/kubeletmein/pkg/do"
 	"github.com/4armed/kubeletmein/pkg/eks"
-	"github.com/4armed/kubeletmein/pkg/generate"
+	"github.com/4armed/kubeletmein/pkg/gke"
 	"github.com/kubicorn/kubicorn/pkg/logger"
 	"github.com/spf13/cobra"
 )
@@ -44,11 +45,14 @@ func main() {
 }
 
 func init() {
-	rootCmd.AddCommand(bootstrap.Command())
-	rootCmd.AddCommand(generate.Command())
-	rootCmd.AddCommand(eks.Command())
+	c := &config.Config{}
 
 	rootCmd.PersistentFlags().IntVarP(&logger.Level, "verbose", "v", 3, "set log level, use 0 to silence, 4 for debugging")
 	rootCmd.PersistentFlags().BoolVarP(&logger.Color, "color", "C", true, "toggle colorized logs")
+	rootCmd.PersistentFlags().StringVar(&c.KubeConfig, "kubeconfig", "kubeconfig", "The filename to write the kubeconfig to")
+
+	rootCmd.AddCommand(do.Command(c))
+	rootCmd.AddCommand(eks.Command(c))
+	rootCmd.AddCommand(gke.Command(c))
 
 }
