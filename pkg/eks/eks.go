@@ -1,4 +1,4 @@
-// Copyright © 2021 Amiran Alavidze @airman604
+// Copyright © 2021 Amiran Alavidze @airman604 and Marc Wickenden @marcwickenden
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
