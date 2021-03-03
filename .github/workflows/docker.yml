@@ -2,7 +2,7 @@ name: docker-hub-push
 on:
   release:
     types:
-      - created
+      - published
 
 env:
   IMAGE_NAME: 4armed/kubeletmein
@@ -26,3 +26,7 @@ jobs:
         run: docker tag ${{ env.IMAGE_NAME }}:${{steps.vars.outputs.tag}} ${{ env.IMAGE_NAME }}:latest
       - name: Push latest
         run: docker push ${{ env.IMAGE_NAME }}:latest
+      - name: Clear config
+        if: always()
+        run: |
+          rm -f ${HOME}/.docker/config.json
