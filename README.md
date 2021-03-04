@@ -35,7 +35,7 @@ It's a single binary compiled for Linux. Download it with `cURL` or `wget` from 
 
 ## How to
 
-A breaking change in v0.11.0 and upwards means kubeletmein uses a single stage process for all providers. Therefore just takes a single argument for the provider and, depending on the provider (i.e. not EKS) a node-name will be required to generate the certificate for.
+A breaking change in v0.11.0 and upwards means kubeletmein uses a single stage process for all providers. Therefore it just takes a single argument for the provider and, depending on the provider (i.e. not EKS) a node-name will be required to generate the certificate for.
 
 ### GKE
 
@@ -108,9 +108,11 @@ kubectl --kubeconfig kubeconfig get pods
 
 To simplify the process, if you want to fire up some clusters to test this on, there are example Terraform configurations provided in the `deploy/terraform` directory. There is one per cloud provider supported. You will need to provide credentials for the provider. If you're not sure how to do this head over to the Terraform website and checkout the relevant provider docs.
 
-AWS - (https://registry.terraform.io/providers/hashicorp/aws/latest/docs)[https://registry.terraform.io/providers/hashicorp/aws/latest/docs]
-GCP - (https://registry.terraform.io/providers/hashicorp/google/latest/docs)[https://registry.terraform.io/providers/hashicorp/google/latest/docs]
-Digital Ocean - (https://registry.terraform.io/providers/digitalocean/digitalocean/latest/docs)[https://registry.terraform.io/providers/digitalocean/digitalocean/latest/docs]
+- AWS - (https://registry.terraform.io/providers/hashicorp/aws/latest/docs)[https://registry.terraform.io/providers/hashicorp/aws/latest/docs]
+
+- GCP - (https://registry.terraform.io/providers/hashicorp/google/latest/docs)[https://registry.terraform.io/providers/hashicorp/google/latest/docs]
+
+- Digital Ocean - (https://registry.terraform.io/providers/digitalocean/digitalocean/latest/docs)[https://registry.terraform.io/providers/digitalocean/digitalocean/latest/docs]
 
 ** NOTE - ONLY GKE IS CURRENTLY RELEASED, OTHERS ARE COMING VERY SOON **
 
