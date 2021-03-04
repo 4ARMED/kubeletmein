@@ -13,8 +13,7 @@ clean:
 	@rm -f ${EXECUTABLE}
 
 test:
-	go test -v ./pkg/do
-	go test -v ./pkg/gke
+	go test -v ./...
 
 docker:
 	docker build -f build/Dockerfile . -t ${EXECUTABLE}
