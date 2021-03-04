@@ -32,7 +32,8 @@ var c *config.Config
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:           "kubeletmein",
+	Version:       config.GitVersion,
+	Use:           config.Executable,
 	Short:         "Abuse public cloud provider kubelet creds",
 	SilenceErrors: true,
 	SilenceUsage:  true,
