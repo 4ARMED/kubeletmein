@@ -1,20 +1,21 @@
 package do
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
 
 	"github.com/4armed/kubeletmein/pkg/common"
 	"github.com/4armed/kubeletmein/pkg/config"
+	"github.com/4armed/kubeletmein/pkg/kubelet/certificate/bootstrap"
 	metadata "github.com/digitalocean/go-metadata"
+	"github.com/ghodss/yaml"
 	"github.com/kubicorn/kubicorn/pkg/logger"
 	"github.com/spf13/cobra"
-	yaml "gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
-	"k8s.io/kubernetes/pkg/kubelet/certificate/bootstrap"
 )
 
 const (
@@ -45,7 +46,7 @@ func Command(c *config.Config) *cobra.Command {
 
 			logger.Info("using bootstrap-config to request new cert for node: %v", c.NodeName)
 			logger.Debug("using bootstrap-config: %v and targeting kubeconfig file: %v", c.BootstrapConfig, c.KubeConfig)
-			err := bootstrap.LoadClientCert(c.KubeConfig, c.BootstrapConfig, c.CertDir, types.NodeName(c.NodeName))
+			err := bootstrap.LoadClientCert(context.TODO(), c.KubeConfig, c.BootstrapConfig, c.CertDir, types.NodeName(c.NodeName))
 			if err != nil {
 				return fmt.Errorf("unable to create certificate: %v", err)
 			}

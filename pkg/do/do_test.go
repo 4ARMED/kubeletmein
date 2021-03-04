@@ -10,8 +10,8 @@ import (
 	"github.com/4armed/kubeletmein/pkg/common"
 	"github.com/4armed/kubeletmein/pkg/mocks"
 	metadata "github.com/digitalocean/go-metadata"
+	"github.com/ghodss/yaml"
 	"github.com/stretchr/testify/assert"
-	yaml "gopkg.in/yaml.v2"
 )
 
 var (

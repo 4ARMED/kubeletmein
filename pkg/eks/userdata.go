@@ -4,12 +4,12 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"regexp"
 
 	"github.com/4armed/kubeletmein/pkg/common"
 	"github.com/ghodss/yaml"
-	api "k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
 // File contains details of files to write through cloud-config
@@ -27,68 +27,60 @@ type CloudConfig struct {
 }
 
 // ParseCloudConfig parses gzipped cloud-config formatted YAML from cloud-init
-func ParseCloudConfig(cloudConfig []byte) (api.Config, error) {
+// As a kubelet kubeconfig file is provided we basically pull this out as-is
+// from cloud-config but merge in our CA data as `certificate-authority-data`
+// to save us having to write out a cert file.
+func ParseCloudConfig(cloudConfig []byte) (*clientcmdapi.Config, error) {
 
-	kubeConfigData := api.Config{}
-	var userData CloudConfig
+	var cloudConfigData []byte
+	k := &clientcmdapi.Config{}
+	userData := CloudConfig{}
 	var caData string
 
-	// Assume our cloud-config is gzipped....we probably should check this
-	ungzippedCloudConfig, err := common.GunzipData(cloudConfig)
+	// cloud-config is probably gzipped but let's check
+	gzipped, err := common.IsGzipped(cloudConfig)
 	if err != nil {
-		return kubeConfigData, err
+		return nil, err
 	}
 
-	fmt.Println("about to unmarshal userdata")
-
-	err = yaml.Unmarshal(ungzippedCloudConfig, &userData)
-	if err != nil {
-		return kubeConfigData, err
+	if gzipped {
+		cloudConfigData, err = common.GunzipData(cloudConfig)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		cloudConfigData = cloudConfig
 	}
 
-	fmt.Println("about to unmarshal /tmp/kubeconfig.yaml")
-
-	testFile, err := ioutil.ReadFile("/tmp/kubeconfig.yaml")
+	err = yaml.Unmarshal(cloudConfigData, &userData)
 	if err != nil {
-		return kubeConfigData, err
+		return nil, err
 	}
-
-	err = yaml.Unmarshal(testFile, &kubeConfigData)
-	if err != nil {
-		return kubeConfigData, err
-	}
-
-	fmt.Println("from file", kubeConfigData)
 
 	for _, v := range userData.WriteFiles {
 		if v.Path == "/etc/eksctl/ca.crt" {
-			caData = string(v.Content)
+			caData = v.Content
 		}
 		if v.Path == "/etc/eksctl/kubeconfig.yaml" {
-			fmt.Println(v.Content)
-			err = yaml.Unmarshal([]byte(v.Content), &kubeConfigData)
+			k, err = clientcmd.Load([]byte(v.Content))
 			if err != nil {
-				return kubeConfigData, err
+				return nil, err
 			}
 		}
-
 	}
 
-	// fmt.Println("clusters:", kubeConfigData.Clusters)
-	fmt.Println(kubeConfigData)
-	fmt.Println("caData:", caData)
+	if caData != "" {
+		fmt.Println("caData: ", caData)
+		contextName := k.CurrentContext
+		clusterName := k.Contexts[contextName].Cluster
+		k.Clusters[clusterName].CertificateAuthorityData = []byte(caData)
+	}
 
-	// if caData != "" {
-	// 	kubeConfigData.Clusters..CertificateAuthority
-	// }
-
-	// kubeConfigData.Clusters
-
-	return kubeConfigData, nil
+	return k, nil
 }
 
 // ParseShellScript parses shell-script format user-data seen on managed nodegroups
-func ParseShellScript(userData string) (api.Config, error) {
+func ParseShellScript(userData string) (*clientcmdapi.Config, error) {
 	// userData should contain the following lines:
 	// B64_CLUSTER_CA=...
 	// API_SERVER_URL=...
@@ -96,38 +88,38 @@ func ParseShellScript(userData string) (api.Config, error) {
 	re := regexp.MustCompile(`(?m)^B64_CLUSTER_CA=(.*)$`)
 	caData := re.FindStringSubmatch(userData)
 	if caData == nil {
-		return api.Config{}, errors.New("Error while parsing user-data, could not find B64_CLUSTER_CA")
+		return nil, errors.New("Error while parsing user-data, could not find B64_CLUSTER_CA")
 	}
 
 	base64DecodedCAData, err := base64.StdEncoding.DecodeString(caData[1])
 	if err != nil {
-		return api.Config{}, err
+		return nil, err
 	}
 
 	re = regexp.MustCompile(`(?m)^API_SERVER_URL=(.*)$`)
 	k8sMaster := re.FindStringSubmatch(userData)
 	if k8sMaster == nil {
-		return api.Config{}, errors.New("Error while parsing user-data, could not find API_SERVER_URL")
+		return nil, errors.New("Error while parsing user-data, could not find API_SERVER_URL")
 	}
 
 	re = regexp.MustCompile(`(?m)^/etc/eks/bootstrap.sh\s+(\S+)\s`)
 	clusterName := re.FindStringSubmatch(userData)
 	if clusterName == nil {
-		return api.Config{}, errors.New("Error while parsing user-data, could not find cluster name from bootstrap.sh parameters")
+		return nil, errors.New("Error while parsing user-data, could not find cluster name from bootstrap.sh parameters")
 	}
 
-	kubeconfigData := api.Config{
+	kubeconfigData := &clientcmdapi.Config{
 		// Define a cluster stanza
-		Clusters: map[string]*api.Cluster{
+		Clusters: map[string]*clientcmdapi.Cluster{
 			clusterName[1]: {
 				Server:                   clusterName[1],
 				CertificateAuthorityData: base64DecodedCAData,
 			},
 		},
 		// Define auth based on the kubelet client cert retrieved
-		AuthInfos: map[string]*api.AuthInfo{
+		AuthInfos: map[string]*clientcmdapi.AuthInfo{
 			"kubelet": {
-				Exec: &api.ExecConfig{
+				Exec: &clientcmdapi.ExecConfig{
 					APIVersion: "client.authentication.k8s.io/v1alpha1",
 					Command:    "aws",
 					Args: []string{
@@ -138,7 +130,7 @@ func ParseShellScript(userData string) (api.Config, error) {
 						"--region",
 						"eu-west-1",
 					},
-					Env: []api.ExecEnvVar{
+					Env: []clientcmdapi.ExecEnvVar{
 						{
 							Name:  "AWS_STS_REGIONAL_ENDPOINTS",
 							Value: "regional",
@@ -148,7 +140,7 @@ func ParseShellScript(userData string) (api.Config, error) {
 			},
 		},
 		// Define a context and set as current
-		Contexts: map[string]*api.Context{
+		Contexts: map[string]*clientcmdapi.Context{
 			"kubeletmein": {
 				Cluster:  clusterName[1],
 				AuthInfo: "kubelet",

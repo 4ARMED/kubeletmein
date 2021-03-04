@@ -1,9 +1,15 @@
 package common
 
-import "io/ioutil"
+import (
+	"io/ioutil"
 
-// FetchMetadataFromFile eads targets files and returns "metadata"
+	"github.com/kubicorn/kubicorn/pkg/logger"
+)
+
+// FetchMetadataFromFile reads targets files and returns "metadata"
 func FetchMetadataFromFile(metadataFile string) ([]byte, error) {
+
+	logger.Debug("FetchMetadataFromFile: %s", metadataFile)
 	metadata, err := ioutil.ReadFile(metadataFile)
 	if err != nil {
 		return nil, err

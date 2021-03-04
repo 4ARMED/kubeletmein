@@ -31,7 +31,7 @@ import (
 
 var (
 	// KubeConfigData will hold the kubeconfig data we will marshal to a file
-	KubeConfigData = clientcmdapi.Config{}
+	KubeConfigData *clientcmdapi.Config
 )
 
 // Command runs the eks command
@@ -122,7 +122,7 @@ func generateKubeConfig(c *config.Config) error {
 	}
 
 	// Marshal to disk
-	err = clientcmd.WriteToFile(KubeConfigData, c.KubeConfig)
+	err = clientcmd.WriteToFile(*KubeConfigData, c.KubeConfig)
 	if err != nil {
 		return fmt.Errorf("unable to write kubeconfig file: %v", err)
 	}

@@ -3,6 +3,7 @@ package eks
 import (
 	"testing"
 
+	"github.com/4armed/kubeletmein/pkg/common"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -111,33 +112,33 @@ write_files:
     apiVersion: v1
     clusters:
     - cluster:
-    certificate-authority: /etc/eksctl/ca.crt
-    server: https://A7BADAD1856073EDEC64B69608E5940F.gr7.eu-west-1.eks.amazonaws.com
-    name: test3.eu-west-1.eksctl.io
+        certificate-authority: /etc/eksctl/ca.crt
+        server: https://A7BADAD1856073EDEC64B69608E5940F.gr7.eu-west-1.eks.amazonaws.com
+      name: test3.eu-west-1.eksctl.io
     contexts:
     - context:
-    cluster: test3.eu-west-1.eksctl.io
-    user: kubelet@test3.eu-west-1.eksctl.io
-    name: kubelet@test3.eu-west-1.eksctl.io
+        cluster: test3.eu-west-1.eksctl.io
+        user: kubelet@test3.eu-west-1.eksctl.io
+      name: kubelet@test3.eu-west-1.eksctl.io
     current-context: kubelet@test3.eu-west-1.eksctl.io
     kind: Config
     preferences: {}
     users:
     - name: kubelet@test3.eu-west-1.eksctl.io
-    user:
-    exec:
-        apiVersion: client.authentication.k8s.io/v1alpha1
-        args:
-        - eks
-        - get-token
-        - --cluster-name
-        - test3
-        - --region
-        - eu-west-1
-        command: aws
-        env:
-        - name: AWS_STS_REGIONAL_ENDPOINTS
-        value: regional
+      user:
+        exec:
+          apiVersion: client.authentication.k8s.io/v1alpha1
+          args:
+          - eks
+          - get-token
+          - --cluster-name
+          - test3
+          - --region
+          - eu-west-1
+          command: aws
+          env:
+          - name: AWS_STS_REGIONAL_ENDPOINTS
+            value: regional
   owner: root:root
   path: /etc/eksctl/kubeconfig.yaml
   permissions: "0644"
@@ -229,13 +230,29 @@ K8S_CLUSTER_DNS_IP=10.100.0.10
 /etc/eks/bootstrap.sh test4 --kubelet-extra-args '--node-labels=eks.amazonaws.com/sourceLaunchTemplateVersion=1,alpha.eksctl.io/cluster-name=test4,alpha.eksctl.io/nodegroup-name=ng-8be0f92d,eks.amazonaws.com/nodegroup-image=ami-08848b4d899d0b3de,eks.amazonaws.com/capacityType=ON_DEMAND,eks.amazonaws.com/nodegroup=ng-8be0f92d,eks.amazonaws.com/sourceLaunchTemplateId=lt-05c479b6852ad90d4' --b64-cluster-ca $B64_CLUSTER_CA --apiserver-endpoint $API_SERVER_URL --dns-cluster-ip $K8S_CLUSTER_DNS_IP`
 )
 
-func TestParseCloudConfig(t *testing.T) {
+func TestParseCloudConfigNoGzip(t *testing.T) {
 
-	userData, err := ParseCloudConfig([]byte(CloudConfigData))
+	kubeConfig, err := ParseCloudConfig([]byte(CloudConfigData))
 	if err != nil {
 		t.Errorf("err: %v", err)
 	}
 
-	assert.Contains(t, userData.CaData, "-----BEGIN CERTIFICATE-----", "CA cert should contain certificate data")
+	// if you change the data above, make sure the cluster name matches here
+	assert.Contains(t, kubeConfig.Clusters, "test3.eu-west-1.eksctl.io")
+}
 
+func TestParseCloudConfigGzip(t *testing.T) {
+	// gzip CloudConfigData
+	gzipCloudCloudConfigData, err := common.GzipData([]byte(CloudConfigData))
+	if err != nil {
+		t.Errorf("err: %v", err)
+	}
+
+	kubeConfig, err := ParseCloudConfig(gzipCloudCloudConfigData)
+	if err != nil {
+		t.Errorf("err: %v", err)
+	}
+
+	// if you change the data above, make sure the cluster name matches here
+	assert.Contains(t, kubeConfig.Clusters, "test3.eu-west-1.eksctl.io")
 }

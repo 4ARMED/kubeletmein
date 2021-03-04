@@ -5,13 +5,14 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"cloud.google.com/go/compute/metadata"
 	"github.com/4armed/kubeletmein/pkg/common"
 	"github.com/4armed/kubeletmein/pkg/mocks"
+	"github.com/ghodss/yaml"
 	"github.com/stretchr/testify/assert"
-	yaml "gopkg.in/yaml.v2"
 )
 
 var (
@@ -48,24 +49,16 @@ func TestMetadataFromGKEService(t *testing.T) {
 }
 
 func TestMetadataFromGKEFile(t *testing.T) {
-	tempFile, err := ioutil.TempFile("", "")
+	cwd, err := os.Getwd()
 	if err != nil {
-		t.Errorf("couldn't create temp file for kube-env: %v", err)
-	}
-	_, err = tempFile.WriteString(exampleKubeEnv)
-	if err != nil {
-		t.Errorf("couldn't write kube-env to temp file: %v", err)
+		t.Errorf("err: %v", err)
 	}
 
-	kubeenv, err := common.FetchMetadataFromFile(tempFile.Name())
+	testFile := filepath.Join(cwd, "testdata", "kube-env.txt")
+	t.Logf("testFile: %s", testFile)
+	kubeenv, err := common.FetchMetadataFromFile(testFile)
 	if err != nil {
 		t.Errorf("want kubeenv, got %q", err)
-	}
-
-	// Clean up
-	err = os.Remove(tempFile.Name())
-	if err != nil {
-		t.Errorf("couldn't remove tempFile: %v", err)
 	}
 
 	k := Kubeenv{}
@@ -79,4 +72,20 @@ func TestMetadataFromGKEFile(t *testing.T) {
 
 func TestBootstrapGkeCmd(t *testing.T) {
 	// TODO: Write test for end-to-end
+	// tempFile, err := ioutil.TempFile("", "")
+	// if err != nil {
+	// 	t.Errorf("couldn't create temp file for kube-env: %v", err)
+	// }
+	// _, err = tempFile.WriteString(exampleKubeEnv)
+	// if err != nil {
+	// 	t.Errorf("couldn't write kube-env to temp file: %v", err)
+	// }
+
+	// tempFile.Name()
+
+	// // Clean up
+	// err = os.Remove(tempFile.Name())
+	// if err != nil {
+	// 	t.Errorf("couldn't remove tempFile: %v", err)
+	// }
 }
