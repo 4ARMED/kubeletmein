@@ -56,7 +56,6 @@ func TestMetadataFromDOFile(t *testing.T) {
 	}
 
 	testFile := filepath.Join(cwd, "testdata", "user-data.txt")
-	t.Logf("testFile: %s", testFile)
 	kubeenv, err := common.FetchMetadataFromFile(testFile)
 	if err != nil {
 		t.Errorf("want kubeenv, got %q", err)
