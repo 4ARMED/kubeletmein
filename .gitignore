@@ -6,3 +6,6 @@ ca-certificates.crt
 kubeconfig
 .vscode
 kubelet.*
+deploy/terraform/*/.terraform*
+deploy/terraform/*/*.tfplan
+deploy/terraform/*/terraform.tfstate*
