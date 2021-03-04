@@ -44,6 +44,7 @@ func Command(c *config.Config) *cobra.Command {
 			}
 
 			logger.Info("using bootstrap-config to request new cert for node: %v", c.NodeName)
+			logger.Debug("using bootstrap-config: %v and targeting kubeconfig file: %v", c.BootstrapConfig, c.KubeConfig)
 			err := bootstrap.LoadClientCert(c.KubeConfig, c.BootstrapConfig, c.CertDir, types.NodeName(c.NodeName))
 			if err != nil {
 				return fmt.Errorf("unable to create certificate: %v", err)

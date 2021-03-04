@@ -4,9 +4,10 @@ go 1.16
 
 require (
 	cloud.google.com/go v0.33.1
+	github.com/aws/aws-sdk-go v1.37.22
 	github.com/digitalocean/go-metadata v0.0.0-20180111002115-15bd36e5f6f7
 	github.com/fatih/color v1.7.0 // indirect
-	github.com/ghodss/yaml v1.0.0 // indirect
+	github.com/ghodss/yaml v1.0.0
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/google/btree v1.0.0 // indirect
 	github.com/googleapis/gnostic v0.5.4 // indirect
@@ -21,7 +22,7 @@ require (
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3 // indirect
-	github.com/stretchr/testify v1.7.0 // indirect
+	github.com/stretchr/testify v1.7.0
 	golang.org/x/oauth2 v0.0.0-20181128211412-28207608b838 // indirect
 	golang.org/x/time v0.0.0-20181108054448-85acf8d2951c // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
