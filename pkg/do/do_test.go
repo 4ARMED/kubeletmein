@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/4armed/kubeletmein/pkg/common"
@@ -41,7 +42,7 @@ func TestMetadataFromDOService(t *testing.T) {
 	m := Metadata{}
 	err = yaml.Unmarshal(userData, &m)
 	if err != nil {
-		t.Errorf("unable to parse YAML from kube-env: %v", err)
+		t.Errorf("unable to parse YAML from user-data: %v", err)
 	}
 
 	assert.Equal(t, "1.1.1.1", m.KubeMaster, "they should be equal")
@@ -49,30 +50,22 @@ func TestMetadataFromDOService(t *testing.T) {
 }
 
 func TestMetadataFromDOFile(t *testing.T) {
-	tempFile, err := ioutil.TempFile("", "")
+	cwd, err := os.Getwd()
 	if err != nil {
-		t.Errorf("couldn't create temp file for user-data: %v", err)
-	}
-	_, err = tempFile.WriteString(exampleUserData)
-	if err != nil {
-		t.Errorf("couldn't write user-data to temp file: %v", err)
+		t.Errorf("err: %v", err)
 	}
 
-	kubeenv, err := common.FetchMetadataFromFile(tempFile.Name())
+	testFile := filepath.Join(cwd, "testdata", "user-data.txt")
+	t.Logf("testFile: %s", testFile)
+	kubeenv, err := common.FetchMetadataFromFile(testFile)
 	if err != nil {
-		t.Errorf("want user-data, got %q", err)
-	}
-
-	// Clean up
-	err = os.Remove(tempFile.Name())
-	if err != nil {
-		t.Errorf("couldn't remove tempFile: %v", err)
+		t.Errorf("want kubeenv, got %q", err)
 	}
 
 	m := Metadata{}
 	err = yaml.Unmarshal(kubeenv, &m)
 	if err != nil {
-		t.Errorf("unable to parse YAML from kube-env: %v", err)
+		t.Errorf("unable to parse YAML from user-data: %v", err)
 	}
 
 	assert.Equal(t, "1.1.1.1", m.KubeMaster, "they should be equal")

@@ -3,7 +3,6 @@ package eks
 import (
 	"encoding/base64"
 	"errors"
-	"fmt"
 	"regexp"
 
 	"github.com/4armed/kubeletmein/pkg/common"
@@ -70,7 +69,6 @@ func ParseCloudConfig(cloudConfig []byte) (*clientcmdapi.Config, error) {
 	}
 
 	if caData != "" {
-		fmt.Println("caData: ", caData)
 		contextName := k.CurrentContext
 		clusterName := k.Contexts[contextName].Cluster
 		k.Clusters[clusterName].CertificateAuthorityData = []byte(caData)

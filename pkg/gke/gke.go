@@ -21,10 +21,10 @@ import (
 
 // Kubeenv stores the kube-env YAML
 type Kubeenv struct {
-	CaCert         string `yaml:"CA_CERT"`
-	KubeletCert    string `yaml:"KUBELET_CERT"`
-	KubeletKey     string `yaml:"KUBELET_KEY"`
-	KubeMasterName string `yaml:"KUBERNETES_MASTER_NAME"`
+	CaCert         string `yaml:"CA_CERT" json:"CA_CERT"`
+	KubeletCert    string `yaml:"KUBELET_CERT" json:"KUBELET_CERT"`
+	KubeletKey     string `yaml:"KUBELET_KEY" json:"KUBELET_KEY"`
+	KubeMasterName string `yaml:"KUBERNETES_MASTER_NAME" json:"KUBERNETES_MASTER_NAME"`
 }
 
 // Command runs the gke command
@@ -94,6 +94,8 @@ func bootstrapKubeletConfig(c *config.Config) error {
 			return err
 		}
 	}
+
+	logger.Debug("kubeenv: %v", kubeenv)
 
 	err = yaml.Unmarshal(kubeenv, &k)
 	if err != nil {

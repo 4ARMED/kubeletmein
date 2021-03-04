@@ -24,9 +24,9 @@ const (
 
 // Metadata stores the Kubernetes-related YAML
 type Metadata struct {
-	CaCert       string `yaml:"k8saas_ca_cert"`
-	KubeletToken string `yaml:"k8saas_bootstrap_token"`
-	KubeMaster   string `yaml:"k8saas_master_domain_name"`
+	CaCert       string `yaml:"k8saas_ca_cert" json:"k8saas_ca_cert"`
+	KubeletToken string `yaml:"k8saas_bootstrap_token" json:"k8saas_bootstrap_token"`
+	KubeMaster   string `yaml:"k8saas_master_domain_name" json:"k8saas_master_domain_name"`
 }
 
 // Command runs the digitalocean command

@@ -5,3 +5,4 @@ bootstrap-kubeconfig
 ca-certificates.crt
 kubeconfig
 .vscode
+kubelet.*
