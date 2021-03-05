@@ -9,3 +9,4 @@ kubelet.*
 deploy/terraform/*/.terraform*
 deploy/terraform/*/*.tfplan
 deploy/terraform/*/terraform.tfstate*
+deploy/terraform/*/kubeconfig*
