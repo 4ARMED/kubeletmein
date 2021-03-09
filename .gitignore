@@ -1,5 +1,5 @@
-kubeletmein
-kubeletmein-linux
+/kubeletmein
+/kubeletmein-linux
 dist/**
 bootstrap-kubeconfig
 ca-certificates.crt
