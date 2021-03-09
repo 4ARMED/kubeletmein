@@ -20,9 +20,6 @@ import (
 	"os"
 
 	"github.com/4armed/kubeletmein/pkg/config"
-	"github.com/4armed/kubeletmein/pkg/do"
-	"github.com/4armed/kubeletmein/pkg/eks"
-	"github.com/4armed/kubeletmein/pkg/gke"
 	"github.com/kubicorn/kubicorn/pkg/logger"
 	"github.com/spf13/cobra"
 )
@@ -51,13 +48,7 @@ func init() {
 
 	rootCmd.PersistentFlags().IntVarP(&logger.Level, "verbose", "v", 3, "set log level, use 0 to silence, 4 for debugging")
 	rootCmd.PersistentFlags().BoolVarP(&logger.Color, "color", "C", true, "toggle colorized logs")
-	rootCmd.PersistentFlags().StringVar(&c.KubeConfig, "kubeconfig", "kubeconfig", "The filename to write the kubeconfig to")
-	rootCmd.PersistentFlags().StringVarP(&c.BootstrapConfig, "bootstrap-kubeconfig", "b", "bootstrap-kubeconfig", "The filename to write the bootstrap kubeconfig to")
-	rootCmd.PersistentFlags().StringVarP(&c.CaCertPath, "ca-cert", "a", "ca-certificates.crt", "The filename to write the apiserver CA cert to")
-	rootCmd.PersistentFlags().StringVarP(&c.MetadataFile, "metadata-file", "f", "", "Don't try to parse metadata, load from the specified filename instead.")
 
-	rootCmd.AddCommand(do.Command(c))
-	rootCmd.AddCommand(eks.Command(c))
-	rootCmd.AddCommand(gke.Command(c))
+	rootCmd.AddCommand(Generate(c))
 
 }

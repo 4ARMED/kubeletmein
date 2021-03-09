@@ -17,6 +17,7 @@ package config
 
 // Config holds configuration values for the various operations
 type Config struct {
+	Provider        string
 	SkipBootstrap   bool
 	BootstrapConfig string
 	CaCertPath      string
