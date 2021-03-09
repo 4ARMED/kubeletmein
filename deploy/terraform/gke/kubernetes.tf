@@ -33,4 +33,9 @@ resource "kubernetes_pod" "kubeletmein" {
       "vulnerable" = "true"
     }
   }
+
+  timeouts {
+    create = "30m" // Allow enough time for the cluster to be happy
+    delete = "10m"
+  }
 }

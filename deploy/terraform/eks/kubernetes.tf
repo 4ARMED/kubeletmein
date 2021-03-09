@@ -1,17 +1,18 @@
-data "digitalocean_kubernetes_cluster" "kubeletmein" {
-  name = digitalocean_kubernetes_cluster.kubeletmein.name
+data "aws_eks_cluster" "kubeletmein" {
+  name = module.eks.cluster_id
+}
+
+data "aws_eks_cluster_auth" "kubeletmein" {
+  name = module.eks.cluster_id
 }
 
 provider "kubernetes" {
-  host             = data.digitalocean_kubernetes_cluster.kubeletmein.endpoint
-  token            = data.digitalocean_kubernetes_cluster.kubeletmein.kube_config[0].token
-  cluster_ca_certificate = base64decode(
-    data.digitalocean_kubernetes_cluster.kubeletmein.kube_config[0].cluster_ca_certificate
-  )
+  host                   = data.aws_eks_cluster.kubeletmein.endpoint
+  cluster_ca_certificate = base64decode(data.aws_eks_cluster.kubeletmein.certificate_authority[0].data)
+  token                  = data.aws_eks_cluster_auth.kubeletmein.token
 }
 
 resource "kubernetes_pod" "kubeletmein" {
-
   metadata {
     name = "kubeletmein-vulnerable"
   }

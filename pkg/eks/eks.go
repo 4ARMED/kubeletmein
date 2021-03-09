@@ -27,11 +27,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-// var (
-// 	// KubeConfigData will hold the kubeconfig data we will marshal to a file
-// 	KubeConfigData *clientcmdapi.Config
-// )
-
 // Command runs the eks command
 func Command(c *config.Config) *cobra.Command {
 
