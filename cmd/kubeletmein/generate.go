@@ -61,7 +61,7 @@ func Generate(c *config.Config) *cobra.Command {
 				return fmt.Errorf("Invalid provider: [%s]", c.Provider)
 			}
 
-			return fmt.Errorf("nothing")
+			return nil
 		},
 	}
 
