@@ -60,17 +60,13 @@ func New(hc *http.Client, providers Providers) (*Client, error) {
 func (c *Client) GetProvider() string {
 
 	logger.Debug("beginning autodetection...")
-	// wg := sync.WaitGroup{}
 
 	for name, provider := range c.providers {
 		logger.Debug("trying [%s]", name)
-		// wg.Add(1)
-		// go checkProvider(c.hc, provider)
 		result := checkProvider(c.hc, provider)
 		if result {
 			return name
 		}
-
 	}
 	return ""
 }

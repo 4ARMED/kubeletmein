@@ -20,9 +20,6 @@ import (
 	"os"
 
 	"github.com/4armed/kubeletmein/pkg/config"
-	"github.com/4armed/kubeletmein/pkg/do"
-	"github.com/4armed/kubeletmein/pkg/eks"
-	"github.com/4armed/kubeletmein/pkg/gke"
 	"github.com/kubicorn/kubicorn/pkg/logger"
 	"github.com/spf13/cobra"
 )
@@ -52,9 +49,6 @@ func init() {
 	rootCmd.PersistentFlags().IntVarP(&logger.Level, "verbose", "v", 3, "set log level, use 0 to silence, 4 for debugging")
 	rootCmd.PersistentFlags().BoolVarP(&logger.Color, "color", "C", true, "toggle colorized logs")
 
-	rootCmd.AddCommand(do.Command(c))
-	rootCmd.AddCommand(eks.Command(c))
-	rootCmd.AddCommand(gke.Command(c))
 	rootCmd.AddCommand(Generate(c))
 
 }

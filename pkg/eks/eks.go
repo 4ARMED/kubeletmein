@@ -23,61 +23,11 @@ import (
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/kubicorn/kubicorn/pkg/logger"
-	"github.com/spf13/cobra"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-// Command runs the eks command
-func Command(c *config.Config) *cobra.Command {
-
-	cmd := &cobra.Command{
-		Use:   "eks",
-		Short: "Generate a kubeconfig on EKS.",
-		RunE: func(cmd *cobra.Command, args []string) error {
-
-			logger.Info("generating kubeconfig for current EKS node")
-			err := generateKubeConfig(c)
-			if err != nil {
-				return fmt.Errorf("unable to generate kubeconfig: %v", err)
-			}
-
-			logger.Info("now try: kubectl --kubeconfig %v get pods", c.KubeConfig)
-
-			return err
-		},
-	}
-
-	cmd.Flags().StringVarP(&c.KubeConfig, "kubeconfig", "k", "kubeconfig", "The filename to write the kubeconfig to")
-
-	return cmd
-}
-
-// func getUserData() (string, error) {
-// 	md, err := NewEC2MetadataClient()
-// 	if err != nil {
-// 		return "", err
-// 	}
-
-// 	userData, err := md.GetUserData()
-// 	if err != nil {
-// 		return "", err
-// 	}
-
-// 	return userData, nil
-// }
-
-func getUserData() (string, error) {
-	md := ec2metadata.New(session.New())
-
-	userData, err := md.GetUserData()
-	if err != nil {
-		return "", err
-	}
-
-	return userData, nil
-}
-
-func generateKubeConfig(c *config.Config) error {
+// Generate creates the kubeconfig for EKS
+func Generate(c *config.Config) error {
 	var userData string
 	var err error
 
@@ -110,6 +60,18 @@ func generateKubeConfig(c *config.Config) error {
 	}
 
 	logger.Info("wrote kubeconfig")
+	logger.Info("now try: kubectl --kubeconfig %v get pods", c.KubeConfig)
 
 	return err
+}
+
+func getUserData() (string, error) {
+	md := ec2metadata.New(session.New())
+
+	userData, err := md.GetUserData()
+	if err != nil {
+		return "", err
+	}
+
+	return userData, nil
 }

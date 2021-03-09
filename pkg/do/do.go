@@ -12,7 +12,6 @@ import (
 	metadata "github.com/digitalocean/go-metadata"
 	"github.com/ghodss/yaml"
 	"github.com/kubicorn/kubicorn/pkg/logger"
-	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -29,44 +28,26 @@ type Metadata struct {
 	KubeMaster   string `yaml:"k8saas_master_domain_name" json:"k8saas_master_domain_name"`
 }
 
-// Command runs the digitalocean command
-func Command(c *config.Config) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:              "do",
-		TraverseChildren: true,
-		Short:            "Generate a kubeconfig on Digital Ocean",
-		RunE: func(cmd *cobra.Command, args []string) error {
-
-			if !c.SkipBootstrap {
-				err := bootstrapKubeletConfig(c)
-				if err != nil {
-					return err
-				}
-			}
-
-			logger.Info("using bootstrap-config to request new cert for node: %v", c.NodeName)
-			logger.Debug("using bootstrap-config: %v and targeting kubeconfig file: %v", c.BootstrapConfig, c.KubeConfig)
-			err := bootstrap.LoadClientCert(context.TODO(), c.KubeConfig, c.BootstrapConfig, c.CertDir, types.NodeName(c.NodeName))
-			if err != nil {
-				return fmt.Errorf("unable to create certificate: %v", err)
-			}
-
-			logger.Info("got new cert and wrote kubeconfig")
-			logger.Info("now try: kubectl --kubeconfig %v get pods", c.KubeConfig)
-
+// Generate creates the kubeconfig for DigitalOcean
+func Generate(c *config.Config) error {
+	if !c.SkipBootstrap {
+		err := bootstrapKubeletConfig(c)
+		if err != nil {
 			return err
-		},
+		}
 	}
 
-	cmd.Flags().BoolVarP(&c.SkipBootstrap, "skip-bootstrap", "s", false, "Skip bootstrap and use existing kubeconfig")
-	cmd.Flags().StringVarP(&c.KubeletCertPath, "kubelet-cert", "c", "kubelet.crt", "The filename to write the kubelet cert to")
-	cmd.Flags().StringVarP(&c.KubeletKeyPath, "kubelet-key", "k", "kubelet.key", "The filename to write the kubelet key to")
-	cmd.Flags().StringVarP(&c.BootstrapConfig, "bootstrap-kubeconfig", "b", "bootstrap-kubeconfig", "The filename to write the bootstrap kubeconfig to")
-	cmd.Flags().StringVarP(&c.CertDir, "cert-dir", "d", "pki", "Directory into which the new cert will be written")
-	cmd.Flags().StringVarP(&c.NodeName, "node-name", "n", "", "Node name to use for CSR")
-	cmd.MarkFlagRequired("node-name")
+	logger.Info("using bootstrap-config to request new cert for node: %v", c.NodeName)
+	logger.Debug("using bootstrap-config: %v and targeting kubeconfig file: %v", c.BootstrapConfig, c.KubeConfig)
+	err := bootstrap.LoadClientCert(context.TODO(), c.KubeConfig, c.BootstrapConfig, c.CertDir, types.NodeName(c.NodeName))
+	if err != nil {
+		return fmt.Errorf("unable to create certificate: %v", err)
+	}
 
-	return cmd
+	logger.Info("got new cert and wrote kubeconfig")
+	logger.Info("now try: kubectl --kubeconfig %v get pods", c.KubeConfig)
+
+	return nil
 }
 
 func fetchMetadataFromDOService(metadataClient *metadata.Client) ([]byte, error) {
