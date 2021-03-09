@@ -4,9 +4,12 @@ import (
 	"encoding/base64"
 	"errors"
 	"regexp"
+	"strings"
 
 	"github.com/4armed/kubeletmein/pkg/common"
 	"github.com/ghodss/yaml"
+	"github.com/integrii/flaggy"
+	"github.com/kubicorn/kubicorn/pkg/logger"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
@@ -23,6 +26,48 @@ type File struct {
 // CloudConfig contains the parsed cloud-config data
 type CloudConfig struct {
 	WriteFiles []File `json:"write_files"`
+}
+
+// ParseUserData takes a string input metadata, works out its type
+// and returns a *clientcmdapi.Config ready for marshalling to disk.
+func ParseUserData(userData string) (*clientcmdapi.Config, error) {
+
+	var kubeConfigData *clientcmdapi.Config
+
+	// Firstly, is it compressed?
+	isGzipped, err := common.IsGzipped([]byte(userData))
+	if err != nil {
+		return nil, err
+	}
+
+	if isGzipped {
+		uncompressedData, err := common.GunzipData([]byte(userData))
+		if err != nil {
+			return nil, err
+		}
+
+		// update userData
+		userData = string(uncompressedData)
+	}
+
+	// Is this a cloud-config?
+	re := regexp.MustCompile(`^#cloud-config`)
+	match := re.MatchString(userData)
+	if match {
+		logger.Debug("assuming gzipped cloud-config")
+		kubeConfigData, err = ParseCloudConfig([]byte(userData))
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		logger.Debug("shell script assuming, looking for /etc/eks/bootstrap.sh")
+		kubeConfigData, err = ParseShellScript(userData)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return kubeConfigData, nil
 }
 
 // ParseCloudConfig parses gzipped cloud-config formatted YAML from cloud-init
@@ -79,38 +124,70 @@ func ParseCloudConfig(cloudConfig []byte) (*clientcmdapi.Config, error) {
 
 // ParseShellScript parses shell-script format user-data seen on managed nodegroups
 func ParseShellScript(userData string) (*clientcmdapi.Config, error) {
-	// userData should contain the following lines:
-	// B64_CLUSTER_CA=...
-	// API_SERVER_URL=...
-	// /etc/eks/bootstrap.sh <CLUSTER_NAME> ...
-	re := regexp.MustCompile(`(?m)^B64_CLUSTER_CA=(.*)$`)
-	caData := re.FindStringSubmatch(userData)
-	if caData == nil {
-		return nil, errors.New("Error while parsing user-data, could not find B64_CLUSTER_CA")
+	// We must account for all arguments to bootstrap.sh in order to find the non-flag based cluster name
+	// https://github.com/awslabs/amazon-eks-ami/blob/master/files/bootstrap.sh
+
+	var clusterName = ""
+	var useMaxPods = ""
+	var b64ClusterCa = ""
+	var apiServerEndpoint = ""
+	var kubeletExtraArgs = ""
+	var enableDockerBridge = ""
+	var awsAPIRetryAttempts = ""
+	var dockerConfigJSON = ""
+	var pauseContainerAccount = ""
+	var pauseContainerVersion = ""
+	var dnsClusterIP = ""
+
+	// We are looking for the /etc/eks/boostrap.sh command somewhere in the user-data.
+	clusterNameAtStart := regexp.MustCompile(`(?m)/etc/eks/bootstrap.sh ([a-z0-9A-Z-_]*)\s*(--.*)`)
+	eksBootstrapCmd := clusterNameAtStart.FindStringSubmatch(userData)
+	if eksBootstrapCmd == nil {
+		return nil, errors.New("Error while parsing user-data, could not find /etc/eks/boostrap.sh")
 	}
 
-	base64DecodedCAData, err := base64.StdEncoding.DecodeString(caData[1])
+	eksBootstrapArgs := strings.Fields(eksBootstrapCmd[2])
+
+	if eksBootstrapCmd[1] == "" {
+		// The cluster name must be at the end
+		clusterName = eksBootstrapArgs[len(eksBootstrapArgs)-1]
+
+		// Now remove it
+		eksBootstrapArgs[len(eksBootstrapArgs)-1] = ""
+		eksBootstrapArgs = eksBootstrapArgs[:len(eksBootstrapArgs)-1]
+
+	} else {
+		clusterName = eksBootstrapCmd[1]
+	}
+
+	flaggy.String(&useMaxPods, "", "use-max-pods", "")
+	flaggy.String(&b64ClusterCa, "", "b64-cluster-ca", "")
+	flaggy.String(&apiServerEndpoint, "", "apiserver-endpoint", "")
+	flaggy.String(&kubeletExtraArgs, "", "kubelet-extra-args", "")
+	flaggy.String(&enableDockerBridge, "", "enable-docker-bridge", "")
+	flaggy.String(&awsAPIRetryAttempts, "", "aws-api-retry-attempts", "")
+	flaggy.String(&dockerConfigJSON, "", "docker-config-json", "")
+	flaggy.String(&pauseContainerAccount, "", "pause-container-account", "")
+	flaggy.String(&pauseContainerVersion, "", "pause-container-version", "")
+	flaggy.String(&dnsClusterIP, "", "dns-cluster-ip", "")
+
+	flaggy.DefaultParser.ShowHelpOnUnexpected = false
+	flaggy.ParseArgs(eksBootstrapArgs)
+
+	logger.Debug("b64ClusterCa: %s", b64ClusterCa)
+	base64DecodedCAData, err := base64.StdEncoding.DecodeString(checkVariable(b64ClusterCa, userData))
 	if err != nil {
 		return nil, err
 	}
 
-	re = regexp.MustCompile(`(?m)^API_SERVER_URL=(.*)$`)
-	k8sMaster := re.FindStringSubmatch(userData)
-	if k8sMaster == nil {
-		return nil, errors.New("Error while parsing user-data, could not find API_SERVER_URL")
-	}
-
-	re = regexp.MustCompile(`(?m)^/etc/eks/bootstrap.sh\s+(\S+)\s`)
-	clusterName := re.FindStringSubmatch(userData)
-	if clusterName == nil {
-		return nil, errors.New("Error while parsing user-data, could not find cluster name from bootstrap.sh parameters")
-	}
+	clusterName = checkVariable(clusterName, userData)
+	k8sMaster := checkVariable(apiServerEndpoint, userData)
 
 	kubeconfigData := &clientcmdapi.Config{
 		// Define a cluster stanza
 		Clusters: map[string]*clientcmdapi.Cluster{
-			clusterName[1]: {
-				Server:                   clusterName[1],
+			clusterName: {
+				Server:                   k8sMaster,
 				CertificateAuthorityData: base64DecodedCAData,
 			},
 		},
@@ -124,7 +201,7 @@ func ParseShellScript(userData string) (*clientcmdapi.Config, error) {
 						"eks",
 						"get-token",
 						"--cluster-name",
-						clusterName[1],
+						clusterName,
 						"--region",
 						"eu-west-1",
 					},
@@ -140,7 +217,7 @@ func ParseShellScript(userData string) (*clientcmdapi.Config, error) {
 		// Define a context and set as current
 		Contexts: map[string]*clientcmdapi.Context{
 			"kubeletmein": {
-				Cluster:  clusterName[1],
+				Cluster:  clusterName,
 				AuthInfo: "kubelet",
 			},
 		},
@@ -148,4 +225,19 @@ func ParseShellScript(userData string) (*clientcmdapi.Config, error) {
 	}
 
 	return kubeconfigData, nil
+}
+
+// Checks if a value looks like a shell variable and, if it is, finds the value in data
+func checkVariable(value string, data string) string {
+	re := regexp.MustCompile(`^\$([a-zA-Z0-9_-]*)`)
+	variableName := re.FindStringSubmatch(value)
+	if variableName != nil {
+		re = regexp.MustCompile(`(?m)^` + regexp.QuoteMeta(variableName[1]) + `=(.*)`)
+		fetchedValue := re.FindStringSubmatch(data)
+		value = fetchedValue[1]
+	}
+
+	// Clean up any quotes
+	unquotedValue := regexp.MustCompile(`^["'](.*)['"]$`).ReplaceAllString(value, `$1`)
+	return unquotedValue
 }

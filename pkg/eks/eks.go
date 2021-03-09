@@ -17,7 +17,6 @@ package eks
 
 import (
 	"fmt"
-	"regexp"
 
 	"github.com/4armed/kubeletmein/pkg/common"
 	"github.com/4armed/kubeletmein/pkg/config"
@@ -26,13 +25,12 @@ import (
 	"github.com/kubicorn/kubicorn/pkg/logger"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/tools/clientcmd"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
-var (
-	// KubeConfigData will hold the kubeconfig data we will marshal to a file
-	KubeConfigData *clientcmdapi.Config
-)
+// var (
+// 	// KubeConfigData will hold the kubeconfig data we will marshal to a file
+// 	KubeConfigData *clientcmdapi.Config
+// )
 
 // Command runs the eks command
 func Command(c *config.Config) *cobra.Command {
@@ -91,10 +89,10 @@ func generateKubeConfig(c *config.Config) error {
 	// get user-data
 	if c.MetadataFile != "" {
 		userDataBytes, err := common.FetchMetadataFromFile(c.MetadataFile)
-		userData = string(userDataBytes)
 		if err != nil {
 			return err
 		}
+		userData = string(userDataBytes)
 	} else {
 		logger.Info("fetching cluster information from user-data from the metadata service")
 		userData, err = getUserData()
@@ -104,25 +102,14 @@ func generateKubeConfig(c *config.Config) error {
 	}
 
 	// These parsers should return an api.Config{} struct
-	logger.Info("determining type of user-data")
-	re := regexp.MustCompile(`Content-Type: text/x-shellscript`)
-	match := re.MatchString(userData)
-	if match {
-		logger.Info("text/x-shellscript detected")
-		KubeConfigData, err = ParseShellScript(userData)
-		if err != nil {
-			return err
-		}
-	} else {
-		logger.Info("assuming gzipped cloud-config")
-		KubeConfigData, err = ParseCloudConfig([]byte(userData))
-		if err != nil {
-			return err
-		}
+	logger.Info("parsing user-data")
+	kubeConfigData, err := ParseUserData(userData)
+	if err != nil {
+		return err
 	}
 
 	// Marshal to disk
-	err = clientcmd.WriteToFile(*KubeConfigData, c.KubeConfig)
+	err = clientcmd.WriteToFile(*kubeConfigData, c.KubeConfig)
 	if err != nil {
 		return fmt.Errorf("unable to write kubeconfig file: %v", err)
 	}
