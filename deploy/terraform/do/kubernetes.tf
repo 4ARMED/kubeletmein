@@ -26,4 +26,9 @@ resource "kubernetes_pod" "kubeletmein" {
       # kubectl exec -ti kubeletmein-vulnerable bash
     }
   }
+
+  timeouts {
+    create = "30m" // Allow enough time for the cluster to be happy
+    delete = "10m"
+  }
 }
