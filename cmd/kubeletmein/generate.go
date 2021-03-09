@@ -73,7 +73,7 @@ func Generate(c *config.Config) *cobra.Command {
 	cmd.Flags().StringVarP(&c.KubeletCertPath, "kubelet-cert", "c", "kubelet.crt", "The filename to write the kubelet cert to")
 	cmd.Flags().StringVarP(&c.KubeletKeyPath, "kubelet-key", "k", "kubelet.key", "The filename to write the kubelet key to")
 	cmd.Flags().StringVarP(&c.CertDir, "cert-dir", "d", "pki", "Directory into which the new cert will be written")
-	cmd.Flags().StringVarP(&c.NodeName, "node-name", "n", "kubeletmein-node", "Node name to use for CSR")
+	cmd.Flags().StringVarP(&c.NodeName, "node-name", "n", "", "Node name to use for CSR. Default is to detect from metadata if needed")
 
 	return cmd
 }

@@ -35,6 +35,18 @@ func Generate(c *config.Config) error {
 		}
 	}
 
+	// TODO: Tidy up duplicate of metadata client
+	if c.NodeName == "" {
+		logger.Debug("fetching nodename from metadata service")
+		metadataClient := metadata.NewClient(&http.Client{})
+		nodeName, err := fetchHostNameFromGCEService(metadataClient)
+		if err != nil {
+			return err
+		}
+
+		c.NodeName = nodeName
+	}
+
 	logger.Info("using bootstrap-config to request new cert for node: %v", c.NodeName)
 	err := bootstrap.LoadClientCert(context.TODO(), c.KubeConfig, c.BootstrapConfig, c.CertDir, types.NodeName(c.NodeName))
 	if err != nil {
@@ -148,4 +160,13 @@ func bootstrapKubeletConfig(c *config.Config) error {
 	logger.Info("wrote bootstrap-kubeconfig")
 
 	return err
+}
+
+func fetchHostNameFromGCEService(metadataClient *metadata.Client) (string, error) {
+	hostname, err := metadataClient.InstanceName()
+	if err != nil {
+		return "", err
+	}
+
+	return hostname, nil
 }

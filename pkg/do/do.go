@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"os"
 
 	"github.com/4armed/kubeletmein/pkg/common"
 	"github.com/4armed/kubeletmein/pkg/config"
@@ -37,6 +36,18 @@ func Generate(c *config.Config) error {
 		}
 	}
 
+	// TODO: Tidy up duplicate of metadata client
+	if c.NodeName == "" {
+		logger.Debug("fetching nodename from metadata service")
+		metadataClient := metadata.NewClient()
+		nodeName, err := fetchHostNameFromDOService(metadataClient)
+		if err != nil {
+			return err
+		}
+
+		c.NodeName = nodeName
+	}
+
 	logger.Info("using bootstrap-config to request new cert for node: %v", c.NodeName)
 	logger.Debug("using bootstrap-config: %v and targeting kubeconfig file: %v", c.BootstrapConfig, c.KubeConfig)
 	err := bootstrap.LoadClientCert(context.TODO(), c.KubeConfig, c.BootstrapConfig, c.CertDir, types.NodeName(c.NodeName))
@@ -65,7 +76,6 @@ func bootstrapKubeletConfig(c *config.Config) error {
 	metadataClient := metadata.NewClient()
 	m := Metadata{}
 	userData := []byte{}
-	var kubeMaster string
 	var err error
 
 	if c.MetadataFile == "" {
@@ -92,17 +102,11 @@ func bootstrapKubeletConfig(c *config.Config) error {
 		return fmt.Errorf("unable to write ca cert to file: %v", err)
 	}
 
-	if os.Getenv("KUBERNETES_SERVICE_HOST") != "" && os.Getenv("KUBERNETES_SERVICE_PORT_HTTPS") != "" {
-		kubeMaster = os.Getenv("KUBERNETES_SERVICE_HOST") + ":" + os.Getenv("KUBERNETES_SERVICE_PORT_HTTPS")
-	} else {
-		kubeMaster = m.KubeMaster
-	}
-
 	logger.Info("generating bootstrap-kubeconfig file at: %v", c.BootstrapConfig)
 	kubeconfigData := clientcmdapi.Config{
 		// Define a cluster stanza
 		Clusters: map[string]*clientcmdapi.Cluster{"local": {
-			Server:                "https://" + kubeMaster,
+			Server:                "https://" + m.KubeMaster,
 			InsecureSkipTLSVerify: false,
 			CertificateAuthority:  c.CaCertPath,
 		}},
@@ -127,4 +131,13 @@ func bootstrapKubeletConfig(c *config.Config) error {
 	logger.Info("wrote bootstrap-kubeconfig")
 
 	return err
+}
+
+func fetchHostNameFromDOService(metadataClient *metadata.Client) (string, error) {
+	hostname, err := metadataClient.Hostname()
+	if err != nil {
+		return "", err
+	}
+
+	return hostname, nil
 }
