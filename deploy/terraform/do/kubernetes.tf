@@ -1,7 +1,5 @@
 data "digitalocean_kubernetes_cluster" "kubeletmein" {
-  name = var.cluster_name
-
-  depends_on = [ digitalocean_kubernetes_cluster.kubeletmein ]
+  name = digitalocean_kubernetes_cluster.kubeletmein.name
 }
 
 provider "kubernetes" {
