@@ -112,11 +112,11 @@ kubeletmein-vulnerable   1/1     Running   0          6m12s
 
 To simplify the process, if you want to fire up some clusters to test this on, there are example Terraform configurations provided in the `deploy/terraform` directory. There is one per cloud provider supported. You will need to provide credentials for the provider. If you're not sure how to do this head over to the Terraform website and checkout the relevant provider docs.
 
-- AWS - (https://registry.terraform.io/providers/hashicorp/aws/latest/docs)[https://registry.terraform.io/providers/hashicorp/aws/latest/docs]
+- AWS - [https://registry.terraform.io/providers/hashicorp/aws/latest/docs](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
 
-- GCP - (https://registry.terraform.io/providers/hashicorp/google/latest/docs)[https://registry.terraform.io/providers/hashicorp/google/latest/docs]
+- GCP - [https://registry.terraform.io/providers/hashicorp/google/latest/docs](https://registry.terraform.io/providers/hashicorp/google/latest/docs)
 
-- Digital Ocean - (https://registry.terraform.io/providers/digitalocean/digitalocean/latest/docs)[https://registry.terraform.io/providers/digitalocean/digitalocean/latest/docs]
+- Digital Ocean - [https://registry.terraform.io/providers/digitalocean/digitalocean/latest/docs](https://registry.terraform.io/providers/digitalocean/digitalocean/latest/docs)
 
 Each folder has a `Makefile` you can use if you wish to init, plan and apply the configs. You can update the `terraform.tfvars` with the necessary changes or set `TF_VAR_xx` variables. However you prefer.
 
