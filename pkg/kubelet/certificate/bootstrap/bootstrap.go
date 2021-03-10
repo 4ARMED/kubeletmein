@@ -34,7 +34,6 @@ import (
 	"k8s.io/client-go/util/certificate"
 	"k8s.io/client-go/util/certificate/csr"
 	"k8s.io/client-go/util/keyutil"
-	"k8s.io/klog"
 	"k8s.io/kubectl/pkg/scheme"
 )
 
@@ -96,7 +95,7 @@ func LoadClientCert(ctx context.Context, kubeconfigPath, bootstrapPath, certDir 
 	}
 
 	if err := waitForServer(ctx, *bootstrapClientConfig, 1*time.Minute); err != nil {
-		klog.Warningf("Error waiting for apiserver to come up: %v", err)
+		logger.Warning("Error waiting for apiserver to come up: %v", err)
 	}
 
 	certData, err := requestNodeCertificate(ctx, bootstrapClient, keyData, nodeName)
@@ -231,7 +230,7 @@ func waitForServer(ctx context.Context, cfg restclient.Config, deadline time.Dur
 	var connected bool
 	wait.JitterUntil(func() {
 		if _, err := cli.Get().AbsPath("/healthz").Do(ctx).Raw(); err != nil {
-			klog.Infof("Failed to connect to apiserver: %v", err)
+			logger.Info("Failed to connect to apiserver: %v", err)
 			return
 		}
 		cancel()
