@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/kubicorn/kubicorn/pkg/logger"
 	certificatesv1 "k8s.io/api/certificates/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -50,11 +51,11 @@ func LoadClientCert(ctx context.Context, kubeconfigPath, bootstrapPath, certDir 
 		return err
 	}
 	if ok {
-		klog.V(2).Infof("Kubeconfig %s exists and is valid, skipping bootstrap", kubeconfigPath)
+		logger.Info("Kubeconfig %s exists and is valid, skipping bootstrap", kubeconfigPath)
 		return nil
 	}
 
-	klog.V(2).Info("Using bootstrap kubeconfig to generate TLS client cert, key and kubeconfig file")
+	logger.Info("Using bootstrap kubeconfig to generate TLS client cert, key and kubeconfig file")
 
 	bootstrapClientConfig, err := loadRESTClientConfig(bootstrapPath)
 	if err != nil {
@@ -85,7 +86,7 @@ func LoadClientCert(ctx context.Context, kubeconfigPath, bootstrapPath, certDir 
 	// managed by the store.
 	privKeyPath := filepath.Join(certDir, tmpPrivateKeyFile)
 	if !verifyKeyData(keyData) {
-		klog.V(2).Infof("No valid private key and/or certificate found, reusing existing private key or creating a new one")
+		logger.Info("No valid private key and/or certificate found, reusing existing private key or creating a new one")
 		// Note: always call LoadOrGenerateKeyFile so that private key is
 		// reused on next startup if CSR request fails.
 		keyData, _, err = keyutil.LoadOrGenerateKeyFile(privKeyPath)
@@ -106,7 +107,7 @@ func LoadClientCert(ctx context.Context, kubeconfigPath, bootstrapPath, certDir 
 		return err
 	}
 	if err := os.Remove(privKeyPath); err != nil && !os.IsNotExist(err) {
-		klog.V(2).Infof("failed cleaning up private key file %q: %v", privKeyPath, err)
+		logger.Info("failed cleaning up private key file %q: %v", privKeyPath, err)
 	}
 
 	return writeKubeconfigFromBootstrapping(bootstrapClientConfig, kubeconfigPath, store.CurrentPath())
@@ -290,7 +291,7 @@ func requestNodeCertificate(ctx context.Context, client clientset.Interface, pri
 	ctx, cancel := context.WithTimeout(ctx, 3600*time.Second)
 	defer cancel()
 
-	klog.V(2).Infof("Waiting for client certificate to be issued")
+	logger.Info("Waiting for client certificate to be issued")
 	return csr.WaitForCertificate(ctx, client, reqName, reqUID)
 }
 
