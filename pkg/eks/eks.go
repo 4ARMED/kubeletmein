@@ -39,7 +39,7 @@ func Generate(c *config.Config) error {
 		}
 		userData = string(userDataBytes)
 	} else {
-		logger.Info("fetching cluster information from user-data from the metadata service")
+		logger.Info("fetching cluster information from the metadata service")
 		userData, err = getUserData()
 		if err != nil {
 			return err
