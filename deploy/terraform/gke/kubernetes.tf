@@ -2,6 +2,7 @@ data "google_client_config" "provider" {}
 
 data "google_container_cluster" "kubeletmein" {
   name     = google_container_cluster.kubeletmein.name
+  location = var.location
 }
 
 provider "kubernetes" {
