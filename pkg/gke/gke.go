@@ -25,20 +25,32 @@ type Kubeenv struct {
 	KubeMasterName string `yaml:"KUBERNETES_MASTER_NAME" json:"KUBERNETES_MASTER_NAME"`
 }
 
+// Generator provides a struct through which we call our funcs
+type Generator struct {
+	mc      *metadata.Client
+	kubeEnv Kubeenv
+	config  *config.Config
+}
+
 // Generate creates the kubeconfig for GKE
 func Generate(c *config.Config) error {
+	metadataClient := metadata.NewClient(&http.Client{})
+	generator := &Generator{
+		mc:     metadataClient,
+		config: c,
+	}
+
 	if !c.SkipBootstrap {
-		err := bootstrapKubeletConfig(c)
+		err := generator.bootstrapKubeletConfig()
 		if err != nil {
 			return err
 		}
 	}
 
-	// TODO: Tidy up duplicate of metadata client
 	if c.NodeName == "" {
 		logger.Debug("fetching nodename from metadata service")
-		metadataClient := metadata.NewClient(&http.Client{})
-		nodeName, err := fetchHostNameFromGCEService(metadataClient)
+
+		nodeName, err := generator.fetchHostNameFromGCEService()
 		if err != nil {
 			return err
 		}
@@ -58,8 +70,8 @@ func Generate(c *config.Config) error {
 	return nil
 }
 
-func fetchMetadataFromGKEService(metadataClient *metadata.Client) ([]byte, error) {
-	ke, err := metadataClient.InstanceAttributeValue("kube-env")
+func (g *Generator) fetchMetadataFromGKEService() ([]byte, error) {
+	ke, err := g.mc.InstanceAttributeValue("kube-env")
 	if err != nil {
 		return nil, err
 	}
@@ -67,21 +79,19 @@ func fetchMetadataFromGKEService(metadataClient *metadata.Client) ([]byte, error
 	return []byte(ke), nil
 }
 
-func bootstrapKubeletConfig(c *config.Config) error {
-	metadataClient := metadata.NewClient(&http.Client{})
-	k := Kubeenv{}
+func (g *Generator) bootstrapKubeletConfig() error {
 	var kubeenv []byte
 	var err error
 
-	if c.MetadataFile == "" {
+	if g.config.MetadataFile == "" {
 		logger.Info("fetching kubelet creds from metadata service")
-		kubeenv, err = fetchMetadataFromGKEService(metadataClient)
+		kubeenv, err = g.fetchMetadataFromGKEService()
 		if err != nil {
 			return err
 		}
 	} else {
-		logger.Info("fetching kubelet creds from file: %v", c.MetadataFile)
-		kubeenv, err = common.FetchMetadataFromFile(c.MetadataFile)
+		logger.Info("fetching kubelet creds from file: %v", g.config.MetadataFile)
+		kubeenv, err = common.FetchMetadataFromFile(g.config.MetadataFile)
 		if err != nil {
 			return err
 		}
@@ -89,34 +99,34 @@ func bootstrapKubeletConfig(c *config.Config) error {
 
 	logger.Debug("kubeenv: %v", kubeenv)
 
-	err = yaml.Unmarshal(kubeenv, &k)
+	err = yaml.Unmarshal(kubeenv, &g.kubeEnv)
 	if err != nil {
 		return fmt.Errorf("unable to parse YAML from kube-env: %v", err)
 	}
 
 	logger.Debug("decoding ca cert")
-	caCert, err := base64.StdEncoding.DecodeString(k.CaCert)
+	caCert, err := base64.StdEncoding.DecodeString(g.kubeEnv.CaCert)
 	if err != nil {
 		return fmt.Errorf("unable to decode ca cert: %v", err)
 	}
 
 	logger.Debug("decoding kubelet cert")
-	kubeletCert, err := base64.StdEncoding.DecodeString(k.KubeletCert)
+	kubeletCert, err := base64.StdEncoding.DecodeString(g.kubeEnv.KubeletCert)
 	if err != nil {
 		return fmt.Errorf("unable to decode kubelet cert: %v", err)
 	}
 
 	logger.Debug("decoding kubelet key")
-	kubeletKey, err := base64.StdEncoding.DecodeString(k.KubeletKey)
+	kubeletKey, err := base64.StdEncoding.DecodeString(g.kubeEnv.KubeletKey)
 	if err != nil {
 		return fmt.Errorf("unable to decode kubelet key: %v", err)
 	}
 
-	logger.Info("generating bootstrap-kubeconfig file at: %v", c.BootstrapConfig)
+	logger.Info("generating bootstrap-kubeconfig file at: %v", g.config.BootstrapConfig)
 	kubeconfigData := clientcmdapi.Config{
 		// Define a cluster stanza
 		Clusters: map[string]*clientcmdapi.Cluster{"local": {
-			Server:                   "https://" + k.KubeMasterName,
+			Server:                   "https://" + g.kubeEnv.KubeMasterName,
 			InsecureSkipTLSVerify:    false,
 			CertificateAuthorityData: caCert,
 		}},
@@ -134,7 +144,7 @@ func bootstrapKubeletConfig(c *config.Config) error {
 	}
 
 	// Marshal to disk
-	err = clientcmd.WriteToFile(kubeconfigData, c.BootstrapConfig)
+	err = clientcmd.WriteToFile(kubeconfigData, g.config.BootstrapConfig)
 	if err != nil {
 		return fmt.Errorf("unable to write bootstrap-kubeconfig file: %v", err)
 	}
@@ -144,8 +154,8 @@ func bootstrapKubeletConfig(c *config.Config) error {
 	return err
 }
 
-func fetchHostNameFromGCEService(metadataClient *metadata.Client) (string, error) {
-	hostname, err := metadataClient.InstanceName()
+func (g *Generator) fetchHostNameFromGCEService() (string, error) {
+	hostname, err := g.mc.InstanceName()
 	if err != nil {
 		return "", err
 	}

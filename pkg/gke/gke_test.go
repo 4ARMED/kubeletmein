@@ -1,7 +1,6 @@
 package gke
 
 import (
-	"bytes"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -15,25 +14,27 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var (
-	exampleKubeEnv = `CA_CERT: aWFtLi4uLmlycmVsZXZhbnQ=
-KUBELET_CERT: aWFtLi4uLmlycmVsZXZhbnQ=
-KUBELET_KEY: aWFtLi4uLmlycmVsZXZhbnQ=
-KUBERNETES_MASTER_NAME: 1.1.1.1`
-)
-
 func TestMetadataFromGKEService(t *testing.T) {
 	metadataClient := mocks.NewTestClient(func(req *http.Request) *http.Response {
 		assert.Equal(t, "http://169.254.169.254/computeMetadata/v1/instance/attributes/kube-env", req.URL.String(), "should be equal")
+
+		responseReader, err := os.Open(filepath.Join("testdata", "kube-env.txt"))
+		if err != nil {
+			t.Errorf("err: %v", err)
+		}
+
 		return &http.Response{
 			StatusCode: 200,
-			Body:       ioutil.NopCloser(bytes.NewBufferString(exampleKubeEnv)),
+			Body:       ioutil.NopCloser(responseReader),
 			Header:     make(http.Header),
 		}
 	})
 
 	m := metadata.NewClient(metadataClient)
-	kubeenv, err := fetchMetadataFromGKEService(m)
+	generator := &Generator{
+		mc: m,
+	}
+	kubeenv, err := generator.fetchMetadataFromGKEService()
 	if err != nil {
 		t.Errorf("want kubeenv, got %q", err)
 	}
