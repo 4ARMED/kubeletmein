@@ -1,7 +1,6 @@
 package do
 
 import (
-	"bytes"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -24,9 +23,15 @@ k8saas_master_domain_name: 1.1.1.1`
 func TestMetadataFromDOService(t *testing.T) {
 	mockClient := mocks.NewTestClient(func(req *http.Request) *http.Response {
 		assert.Equal(t, "http://169.254.169.254/metadata/v1/user-data", req.URL.String(), "should be equal")
+
+		responseReader, err := os.Open(filepath.Join("testdata", "user-data.txt"))
+		if err != nil {
+			t.Errorf("err: %v", err)
+		}
+
 		return &http.Response{
 			StatusCode: 200,
-			Body:       ioutil.NopCloser(bytes.NewBufferString(exampleUserData)),
+			Body:       ioutil.NopCloser(responseReader),
 			Header:     make(http.Header),
 		}
 	})
@@ -34,7 +39,11 @@ func TestMetadataFromDOService(t *testing.T) {
 	metadataClientOptions := metadata.WithHTTPClient(mockClient)
 	metadataClient := metadata.NewClient(metadataClientOptions)
 
-	userData, err := fetchMetadataFromDOService(metadataClient)
+	generator := &Generator{
+		mc: metadataClient,
+	}
+
+	userData, err := generator.fetchMetadataFromDOService()
 	if err != nil {
 		t.Errorf("want user-data, got %q", err)
 	}
@@ -45,7 +54,7 @@ func TestMetadataFromDOService(t *testing.T) {
 		t.Errorf("unable to parse YAML from user-data: %v", err)
 	}
 
-	assert.Equal(t, "1.1.1.1", m.KubeMaster, "they should be equal")
+	assert.Equal(t, "2b2afd78-3773-426b-b67b-cbeb469ed434.internal.k8s.ondigitalocean.com", m.KubeMaster, "they should be equal")
 
 }
 
@@ -67,7 +76,7 @@ func TestMetadataFromDOFile(t *testing.T) {
 		t.Errorf("unable to parse YAML from user-data: %v", err)
 	}
 
-	assert.Equal(t, "1.1.1.1", m.KubeMaster, "they should be equal")
+	assert.Equal(t, "2b2afd78-3773-426b-b67b-cbeb469ed434.internal.k8s.ondigitalocean.com", m.KubeMaster, "they should be equal")
 }
 
 func TestBootstrapDOCmd(t *testing.T) {

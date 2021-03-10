@@ -2,9 +2,8 @@ package do
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
-	"io/ioutil"
-	"os"
 
 	"github.com/4armed/kubeletmein/pkg/common"
 	"github.com/4armed/kubeletmein/pkg/config"
@@ -28,13 +27,36 @@ type Metadata struct {
 	KubeMaster   string `yaml:"k8saas_master_domain_name" json:"k8saas_master_domain_name"`
 }
 
+// Generator provides a struct through which we call our funcs
+type Generator struct {
+	mc       *metadata.Client
+	metadata Metadata
+	config   *config.Config
+}
+
 // Generate creates the kubeconfig for DigitalOcean
 func Generate(c *config.Config) error {
+	metadataClient := metadata.NewClient()
+	generator := &Generator{
+		mc:     metadataClient,
+		config: c,
+	}
+
 	if !c.SkipBootstrap {
-		err := bootstrapKubeletConfig(c)
+		err := generator.bootstrapKubeletConfig()
 		if err != nil {
 			return err
 		}
+	}
+
+	if c.NodeName == "" {
+		logger.Debug("fetching nodename from metadata service")
+		nodeName, err := generator.fetchHostNameFromDOService()
+		if err != nil {
+			return err
+		}
+
+		c.NodeName = nodeName
 	}
 
 	logger.Info("using bootstrap-config to request new cert for node: %v", c.NodeName)
@@ -50,10 +72,10 @@ func Generate(c *config.Config) error {
 	return nil
 }
 
-func fetchMetadataFromDOService(metadataClient *metadata.Client) ([]byte, error) {
+func (g *Generator) fetchMetadataFromDOService() ([]byte, error) {
 	logger.Info("fetching kubelet creds from metadata service")
 
-	userData, err := metadataClient.UserData()
+	userData, err := g.mc.UserData()
 	if err != nil {
 		return nil, err
 	}
@@ -61,54 +83,43 @@ func fetchMetadataFromDOService(metadataClient *metadata.Client) ([]byte, error)
 	return []byte(userData), nil
 }
 
-func bootstrapKubeletConfig(c *config.Config) error {
-	metadataClient := metadata.NewClient()
-	m := Metadata{}
+func (g *Generator) bootstrapKubeletConfig() error {
 	userData := []byte{}
-	var kubeMaster string
 	var err error
 
-	if c.MetadataFile == "" {
-		userData, err = fetchMetadataFromDOService(metadataClient)
+	if g.config.MetadataFile == "" {
+		userData, err = g.fetchMetadataFromDOService()
 		if err != nil {
 			return err
 		}
 	} else {
-		logger.Info("fetching kubelet creds from file: %v", c.MetadataFile)
-		userData, err = common.FetchMetadataFromFile(c.MetadataFile)
+		logger.Info("fetching kubelet creds from file: %v", g.config.MetadataFile)
+		userData, err = common.FetchMetadataFromFile(g.config.MetadataFile)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = yaml.Unmarshal([]byte(userData), &m)
+	err = yaml.Unmarshal([]byte(userData), &g.metadata)
 	if err != nil {
 		return fmt.Errorf("unable to parse YAML from user-data: %v", err)
 	}
 
-	logger.Info("writing ca cert to: %v", c.CaCertPath)
-	err = ioutil.WriteFile(c.CaCertPath, []byte(m.CaCert), 0644)
-	if err != nil {
-		return fmt.Errorf("unable to write ca cert to file: %v", err)
-	}
+	logger.Debug("encoding ca cert")
+	var caCert []byte
+	base64.StdEncoding.Encode(caCert, []byte(g.metadata.CaCert))
 
-	if os.Getenv("KUBERNETES_SERVICE_HOST") != "" && os.Getenv("KUBERNETES_SERVICE_PORT_HTTPS") != "" {
-		kubeMaster = os.Getenv("KUBERNETES_SERVICE_HOST") + ":" + os.Getenv("KUBERNETES_SERVICE_PORT_HTTPS")
-	} else {
-		kubeMaster = m.KubeMaster
-	}
-
-	logger.Info("generating bootstrap-kubeconfig file at: %v", c.BootstrapConfig)
+	logger.Info("generating bootstrap-kubeconfig file at: %v", g.config.BootstrapConfig)
 	kubeconfigData := clientcmdapi.Config{
 		// Define a cluster stanza
 		Clusters: map[string]*clientcmdapi.Cluster{"local": {
-			Server:                "https://" + kubeMaster,
-			InsecureSkipTLSVerify: false,
-			CertificateAuthority:  c.CaCertPath,
+			Server:                   "https://" + g.metadata.KubeMaster,
+			InsecureSkipTLSVerify:    false,
+			CertificateAuthorityData: caCert,
 		}},
 		// Define auth based on the kubelet client cert retrieved
 		AuthInfos: map[string]*clientcmdapi.AuthInfo{"kubelet": {
-			Token: m.KubeletToken,
+			Token: g.metadata.KubeletToken,
 		}},
 		// Define a context and set as current
 		Contexts: map[string]*clientcmdapi.Context{"service-account-context": {
@@ -119,7 +130,7 @@ func bootstrapKubeletConfig(c *config.Config) error {
 	}
 
 	// Marshal to disk
-	err = clientcmd.WriteToFile(kubeconfigData, c.BootstrapConfig)
+	err = clientcmd.WriteToFile(kubeconfigData, g.config.BootstrapConfig)
 	if err != nil {
 		return fmt.Errorf("unable to write bootstrap-kubeconfig file: %v", err)
 	}
@@ -127,4 +138,13 @@ func bootstrapKubeletConfig(c *config.Config) error {
 	logger.Info("wrote bootstrap-kubeconfig")
 
 	return err
+}
+
+func (g *Generator) fetchHostNameFromDOService() (string, error) {
+	hostname, err := g.mc.Hostname()
+	if err != nil {
+		return "", err
+	}
+
+	return hostname, nil
 }
