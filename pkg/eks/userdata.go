@@ -160,6 +160,8 @@ func ParseShellScript(userData string) (*clientcmdapi.Config, error) {
 		clusterName = eksBootstrapCmd[1]
 	}
 
+	flaggy.ResetParser()
+
 	flaggy.String(&useMaxPods, "", "use-max-pods", "")
 	flaggy.String(&b64ClusterCa, "", "b64-cluster-ca", "")
 	flaggy.String(&apiServerEndpoint, "", "apiserver-endpoint", "")
