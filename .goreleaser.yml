@@ -1,6 +1,9 @@
 builds:
   - main: ./cmd/kubeletmein
     binary: kubeletmein
+    ldflags:
+    - -extldflags '-static' 
+    - -X github.com/4armed/kubeletmein/pkg/config.GitVersion={{.Version}}
     env:
     - CGO_ENABLED=0
     goos:
