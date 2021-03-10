@@ -11,3 +11,8 @@ resource "digitalocean_kubernetes_cluster" "kubeletmein" {
     node_count = var.node_count
   }
 }
+
+resource "local_file" "kubeconfig" {
+  content = digitalocean_kubernetes_cluster.kubeletmein.kube_config[0].raw_config
+  filename = "kubeconfig-${var.cluster_name}.yaml"
+}
