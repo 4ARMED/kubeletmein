@@ -2,8 +2,8 @@ package do
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 
 	"github.com/4armed/kubeletmein/pkg/common"
 	"github.com/4armed/kubeletmein/pkg/config"
@@ -96,19 +96,17 @@ func bootstrapKubeletConfig(c *config.Config) error {
 		return fmt.Errorf("unable to parse YAML from user-data: %v", err)
 	}
 
-	logger.Info("writing ca cert to: %v", c.CaCertPath)
-	err = ioutil.WriteFile(c.CaCertPath, []byte(m.CaCert), 0644)
-	if err != nil {
-		return fmt.Errorf("unable to write ca cert to file: %v", err)
-	}
+	logger.Debug("encoding ca cert")
+	var caCert []byte
+	base64.StdEncoding.Encode(caCert, []byte(m.CaCert))
 
 	logger.Info("generating bootstrap-kubeconfig file at: %v", c.BootstrapConfig)
 	kubeconfigData := clientcmdapi.Config{
 		// Define a cluster stanza
 		Clusters: map[string]*clientcmdapi.Cluster{"local": {
-			Server:                "https://" + m.KubeMaster,
-			InsecureSkipTLSVerify: false,
-			CertificateAuthority:  c.CaCertPath,
+			Server:                   "https://" + m.KubeMaster,
+			InsecureSkipTLSVerify:    false,
+			CertificateAuthorityData: caCert,
 		}},
 		// Define auth based on the kubelet client cert retrieved
 		AuthInfos: map[string]*clientcmdapi.AuthInfo{"kubelet": {

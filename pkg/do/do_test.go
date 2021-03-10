@@ -67,7 +67,7 @@ func TestMetadataFromDOFile(t *testing.T) {
 		t.Errorf("unable to parse YAML from user-data: %v", err)
 	}
 
-	assert.Equal(t, "1.1.1.1", m.KubeMaster, "they should be equal")
+	assert.Equal(t, "2b2afd78-3773-426b-b67b-cbeb469ed434.internal.k8s.ondigitalocean.com", m.KubeMaster, "they should be equal")
 }
 
 func TestBootstrapDOCmd(t *testing.T) {

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 
 	"cloud.google.com/go/compute/metadata"
@@ -100,22 +99,11 @@ func bootstrapKubeletConfig(c *config.Config) error {
 	if err != nil {
 		return fmt.Errorf("unable to decode ca cert: %v", err)
 	}
-	logger.Info("writing ca cert to: %v", c.CaCertPath)
-	err = ioutil.WriteFile(c.CaCertPath, caCert, 0644)
-	if err != nil {
-		return fmt.Errorf("unable to write ca cert to file: %v", err)
-	}
 
 	logger.Debug("decoding kubelet cert")
 	kubeletCert, err := base64.StdEncoding.DecodeString(k.KubeletCert)
 	if err != nil {
 		return fmt.Errorf("unable to decode kubelet cert: %v", err)
-	}
-
-	logger.Info("writing kubelet cert to: %v", c.KubeletCertPath)
-	err = ioutil.WriteFile(c.KubeletCertPath, kubeletCert, 0644)
-	if err != nil {
-		return fmt.Errorf("unable to write kubelet cert to file: %v", err)
 	}
 
 	logger.Debug("decoding kubelet key")
@@ -124,24 +112,18 @@ func bootstrapKubeletConfig(c *config.Config) error {
 		return fmt.Errorf("unable to decode kubelet key: %v", err)
 	}
 
-	logger.Info("writing kubelet key to: %v", c.KubeletKeyPath)
-	err = ioutil.WriteFile(c.KubeletKeyPath, kubeletKey, 0644)
-	if err != nil {
-		return fmt.Errorf("unable to write kubelet key to file: %v", err)
-	}
-
 	logger.Info("generating bootstrap-kubeconfig file at: %v", c.BootstrapConfig)
 	kubeconfigData := clientcmdapi.Config{
 		// Define a cluster stanza
 		Clusters: map[string]*clientcmdapi.Cluster{"local": {
-			Server:                "https://" + k.KubeMasterName,
-			InsecureSkipTLSVerify: false,
-			CertificateAuthority:  c.CaCertPath,
+			Server:                   "https://" + k.KubeMasterName,
+			InsecureSkipTLSVerify:    false,
+			CertificateAuthorityData: caCert,
 		}},
 		// Define auth based on the kubelet client cert retrieved
 		AuthInfos: map[string]*clientcmdapi.AuthInfo{"kubelet": {
-			ClientCertificate: c.KubeletCertPath,
-			ClientKey:         c.KubeletKeyPath,
+			ClientCertificateData: kubeletCert,
+			ClientKeyData:         kubeletKey,
 		}},
 		// Define a context and set as current
 		Contexts: map[string]*clientcmdapi.Context{"service-account-context": {
