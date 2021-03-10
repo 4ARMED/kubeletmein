@@ -1,3 +1,10 @@
-ksaas_ca_cert: aWFtLi4uLmlycmVsZXZhbnQ=
-k8saas_bootstrap_token: aWFtLi4uLmlycmVsZXZhbnQ=
-k8saas_master_domain_name: 1.1.1.1
+#cloud-config
+k8saas_role: kubelet
+k8saas_master_domain_name: "2b2afd78-3773-426b-b67b-cbeb469ed434.internal.k8s.ondigitalocean.com"
+k8saas_bootstrap_token: "08c0g1.e13d44997052275a"
+k8saas_proxy_token: "a4873d495e09e1330195e046f481bef7d1084d9841203c9df141fb1336313015"
+k8saas_ca_cert: "-----BEGIN CERTIFICATE-----\nMIIDJzCCAg+gAwIBAgICBnUwDQYJKoZIhvcNAQELBQAwMzEVMBMGA1UEChMMRGln\naXRhbE9jZWFuMRowGAYDVQQDExFrOHNhYXMgQ2x1c3RlciBDQTAeFw0yMTAzMDkx\nNzE3MDRaFw00MTAzMDkxNzE3MDRaMDMxFTATBgNVBAoTDERpZ2l0YWxPY2VhbjEa\nMBgGA1UEAxMRazhzYWFzIENsdXN0ZXIgQ0EwggEiMA0GCSqGSIb3DQEBAQUAA4IB\nDwAwggEKAoIBAQDefcl+NQoS12Xg6wJRjtXe9RCjGXAJ55LgCuTKtjmA0zHAuahj\n0JIne6XVkXi9mS7Ej7SkSPkFU4ZBZUet+4s9wkbrU8G4xIbQWXAvA6BHT6lgm/xs\nHPgKtDn/dK1jlsLbWuWBGKC4lIEtNiOEIFKzI0CYpJrABSxjjmjlKhuvL+/L5cn9\n20xxiQRdu5eHJS+vWEKt6qVFp/tb81fQpYSVUbW6B41rltacqXiPSZhk8gYm6gUJ\nCN4iurS9TzoN0eIMp9JSEnhG5rbO3OSErkUrKjohYam3DCJ4a99v42dE5ZQMnZIU\nv3X3hctC/4JMCUrb0AIGZGllxp8Bw4b3CnXzAgMBAAGjRTBDMA4GA1UdDwEB/wQE\nAwIBhjASBgNVHRMBAf8ECDAGAQH/AgEAMB0GA1UdDgQWBBRLPGurTUCNUjWgDZW9\nba7ADOGBvTANBgkqhkiG9w0BAQsFAAOCAQEAPXGoc1arjLLg3j8Kp9Q7MIoI2Prb\noiz+2LHo+aplJbUTNINWrbC6zF7As8/p/u3QJGbOcmhdqbJyrOxQryNVTFEfhVRT\nWjV3uMRegNWD9Vr5nlFPOS+A0hLETY0fACYKrsuEk5Iz88mdUxdFuIhEkHKY2h/e\nQMtXKOFbwKXRzFYVb3wPzzBUd+mjwHDGCEvhndZNSXMyIicwb4PmcZo1S0sNt+y+\n/o7F9Lr+yXEwdH/WK+DKuiP8zFuvbK2t9Jkh0DszZgGPMFBE6zDxSbgqNwbxsmwh\njlclLNUe5f30JAQ3DvQt0SwH/o1KEpQoLa6xXaK7U0r+/vK6SeEz4RZLSQ==\n-----END CERTIFICATE-----\n"
+k8saas_overlay_subnet: "10.244.0.0/16"
+k8saas_cluster_uuid: "2b2afd78-3773-426b-b67b-cbeb469ed434"
+k8saas_dns_service_ip: "10.245.0.10"
+k8saas_node_labels: "doks.digitalocean.com/node-id=b2e96fb0-4b10-48d6-99a1-5287496f3dc0,doks.digitalocean.com/node-pool-id=8b982088-27cf-4f3f-bef9-e9e0dc6d03b3,doks.digitalocean.com/node-pool=kubeletmein-pool,doks.digitalocean.com/version=1.20.2-do.0"
