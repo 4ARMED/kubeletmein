@@ -105,9 +105,8 @@ func (g *Generator) bootstrapKubeletConfig() error {
 		return fmt.Errorf("unable to parse YAML from user-data: %v", err)
 	}
 
-	logger.Debug("encoding ca cert")
-	var caCert []byte
-	base64.StdEncoding.Encode(caCert, []byte(g.metadata.CaCert))
+	logger.Debug("encoding ca cert: %s", g.metadata.CaCert)
+	encodedCaCert := base64.StdEncoding.EncodeToString([]byte(g.metadata.CaCert))
 
 	logger.Info("generating bootstrap-kubeconfig file at: %v", g.config.BootstrapConfig)
 	kubeconfigData := clientcmdapi.Config{
@@ -115,7 +114,7 @@ func (g *Generator) bootstrapKubeletConfig() error {
 		Clusters: map[string]*clientcmdapi.Cluster{"local": {
 			Server:                   "https://" + g.metadata.KubeMaster,
 			InsecureSkipTLSVerify:    false,
-			CertificateAuthorityData: caCert,
+			CertificateAuthorityData: []byte(encodedCaCert),
 		}},
 		// Define auth based on the kubelet client cert retrieved
 		AuthInfos: map[string]*clientcmdapi.AuthInfo{"kubelet": {
