@@ -69,7 +69,7 @@ func Generate(c *config.Config) *cobra.Command {
 	cmd.Flags().StringVar(&c.KubeConfig, "kubeconfig", "kubeconfig", "The filename to write the kubeconfig to")
 	cmd.Flags().StringVarP(&c.BootstrapConfig, "bootstrap-kubeconfig", "b", "bootstrap-kubeconfig", "The filename to write the bootstrap kubeconfig to")
 	cmd.Flags().StringVarP(&c.CaCertPath, "ca-cert", "a", "ca-certificates.crt", "The filename to write the apiserver CA cert to")
-	cmd.Flags().StringVarP(&c.MetadataFile, "metadata-file", "f", "", "Don't try to parse metadata, load from the specified filename instead.")
+	cmd.Flags().StringVarP(&c.MetadataFile, "metadata-file", "f", "", "Don't try to parse metadata, load from the specified filename instead")
 	cmd.Flags().StringVarP(&c.KubeletCertPath, "kubelet-cert", "c", "kubelet.crt", "The filename to write the kubelet cert to")
 	cmd.Flags().StringVarP(&c.KubeletKeyPath, "kubelet-key", "k", "kubelet.key", "The filename to write the kubelet key to")
 	cmd.Flags().StringVarP(&c.CertDir, "cert-dir", "d", "pki", "Directory into which the new cert will be written")
