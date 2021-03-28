@@ -104,6 +104,11 @@ func (g *Generator) bootstrapKubeletConfig() error {
 		return fmt.Errorf("unable to parse YAML from kube-env: %v", err)
 	}
 
+	// Check we have kubelet credentials otherwise we cannot continue
+	if g.kubeEnv.KubeletCert == "" || g.kubeEnv.KubeletKey == "" {
+		return fmt.Errorf("no kubelet credentials retrieved from metadata. Node not vulnerable?")
+	}
+
 	logger.Debug("decoding ca cert")
 	caCert, err := base64.StdEncoding.DecodeString(g.kubeEnv.CaCert)
 	if err != nil {

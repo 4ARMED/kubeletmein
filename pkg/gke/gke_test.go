@@ -49,6 +49,41 @@ func TestMetadataFromGKEService(t *testing.T) {
 
 }
 
+func TestMetadataFromGKEServiceNotVulnerable(t *testing.T) {
+	metadataClient := mocks.NewTestClient(func(req *http.Request) *http.Response {
+		assert.Equal(t, "http://169.254.169.254/computeMetadata/v1/instance/attributes/kube-env", req.URL.String(), "should be equal")
+
+		responseReader, err := os.Open(filepath.Join("testdata", "kube-env-notvulnerable.txt"))
+		if err != nil {
+			t.Errorf("err: %v", err)
+		}
+
+		return &http.Response{
+			StatusCode: 200,
+			Body:       ioutil.NopCloser(responseReader),
+			Header:     make(http.Header),
+		}
+	})
+
+	m := metadata.NewClient(metadataClient)
+	generator := &Generator{
+		mc: m,
+	}
+	kubeenv, err := generator.fetchMetadataFromGKEService()
+	if err != nil {
+		t.Errorf("want kubeenv, got %q", err)
+	}
+
+	k := Kubeenv{}
+	err = yaml.Unmarshal(kubeenv, &k)
+	if err != nil {
+		t.Errorf("unable to parse YAML from kube-env: %v", err)
+	}
+
+	assert.Equal(t, "", k.KubeletKey, "they should be equal")
+
+}
+
 func TestMetadataFromGKEFile(t *testing.T) {
 	cwd, err := os.Getwd()
 	if err != nil {
