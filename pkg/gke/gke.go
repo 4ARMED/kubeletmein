@@ -97,7 +97,7 @@ func (g *Generator) bootstrapKubeletConfig() error {
 		}
 	}
 
-	logger.Debug("kubeenv: %v", kubeenv)
+	logger.Debug("kubeenv: %v", string(kubeenv))
 
 	err = yaml.Unmarshal(kubeenv, &g.kubeEnv)
 	if err != nil {
