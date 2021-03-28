@@ -1,7 +1,7 @@
 /kubeletmein
 /kubeletmein-linux
 dist/**
-bootstrap-kubeconfig
+bootstrap-kubeconfig.yaml
 ca-certificates.crt
 kubeconfig
 .vscode
