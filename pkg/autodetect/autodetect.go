@@ -12,8 +12,10 @@ type Providers map[string]Provider
 // Provider stores the details of each cloud provider
 type Provider struct {
 	Path               string
-	Header             map[string]string
+	RequestHeader      map[string]string
+	ResponseHeader     map[string]string
 	ExpectedStatusCode int
+	Method             string
 }
 
 // Client wraps http.Client so we can mock
@@ -30,17 +32,30 @@ var (
 	PublicCloudProviders = Providers{
 		"gke": Provider{
 			Path:               "/",
-			Header:             map[string]string{"Server": "Metadata Server for VM"},
+			Method:             "GET",
+			RequestHeader:      map[string]string{},
+			ResponseHeader:     map[string]string{"Server": "Metadata Server for VM"},
 			ExpectedStatusCode: http.StatusOK,
 		},
 		"do": Provider{
 			Path:               "/metadata/v1/id",
-			Header:             map[string]string{"Content-Type": "text/plain; charset=utf-8"},
+			Method:             "GET",
+			RequestHeader:      map[string]string{},
+			ResponseHeader:     map[string]string{"Content-Type": "text/plain; charset=utf-8"},
 			ExpectedStatusCode: http.StatusOK,
 		},
 		"eks": Provider{
 			Path:               "/",
-			Header:             map[string]string{"Server": "EC2ws"},
+			Method:             "GET",
+			RequestHeader:      map[string]string{},
+			ResponseHeader:     map[string]string{"Server": "EC2ws"},
+			ExpectedStatusCode: http.StatusOK,
+		},
+		"eks-imdsv2": Provider{
+			Path:               "/latest/api/token",
+			Method:             "POST",
+			RequestHeader:      map[string]string{"X-aws-ec2-metadata-token-ttl-seconds": "21600"},
+			ResponseHeader:     map[string]string{"Server": "EC2ws"},
 			ExpectedStatusCode: http.StatusOK,
 		},
 	}
@@ -72,7 +87,17 @@ func (c *Client) GetProvider() string {
 }
 
 func checkProvider(hc *http.Client, provider Provider) bool {
-	rs, err := hc.Get(metadataServerURL + provider.Path)
+
+	rq, err := http.NewRequest(provider.Method, metadataServerURL+provider.Path, nil)
+	if err != nil {
+		return false
+	}
+
+	for k, v := range provider.RequestHeader {
+		rq.Header.Add(k, v)
+	}
+
+	rs, err := hc.Do(rq)
 	if err != nil {
 		return false
 	}
@@ -81,7 +106,7 @@ func checkProvider(hc *http.Client, provider Provider) bool {
 		return false
 	}
 
-	for k, v := range provider.Header {
+	for k, v := range provider.ResponseHeader {
 		header := rs.Header.Get(k)
 		if header != v {
 			logger.Debug("header %s does not match expected value %s, got %s", k, v, header)

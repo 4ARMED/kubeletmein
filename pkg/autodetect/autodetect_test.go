@@ -26,6 +26,10 @@ func newMetadataServer(t *testing.T, testServer *testServer) *httptest.Server {
 	case "eks":
 		// AWS EKS
 		mux.HandleFunc("/", testServer.eksHandler)
+
+	case "eks-imdsv2":
+		// AWS EKS when using IMDSv2
+		mux.HandleFunc("/latest/api/token", testServer.eksImdsv2Handler)
 	}
 
 	return httptest.NewServer(mux)
@@ -76,6 +80,14 @@ func (s *testServer) eksHandler(w http.ResponseWriter, r *http.Request) {
 	2019-10-01
 	2020-10-27
 	latest`
+
+	w.Write([]byte(responseData))
+}
+
+func (s *testServer) eksImdsv2Handler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Server", "EC2ws")
+
+	responseData := `AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==`
 
 	w.Write([]byte(responseData))
 }
@@ -176,6 +188,28 @@ func TestAutoDetectEKS(t *testing.T) {
 	provider := pc.GetProvider()
 
 	assert.Equal(t, "eks", provider, "should be equal")
+
+}
+
+func TestAutoDetectEKSImdsV2(t *testing.T) {
+	ts := &testServer{
+		t:             t,
+		cloudProvider: "eks-imdsv2",
+	}
+
+	server := newMetadataServer(t, ts)
+	defer server.Close()
+
+	metadataServerURL = server.URL
+
+	pc, err := New(&http.Client{}, nil)
+	if err != nil {
+		t.Errorf("err: %v", err)
+	}
+
+	provider := pc.GetProvider()
+
+	assert.Equal(t, "eks-imdsv2", provider, "should be equal")
 
 }
 
