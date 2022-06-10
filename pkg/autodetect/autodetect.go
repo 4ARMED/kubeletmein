@@ -53,7 +53,7 @@ var (
 		},
 		"eks-imdsv2": Provider{
 			Path:               "/latest/api/token",
-			Method:             "POST",
+			Method:             "PUT",
 			RequestHeader:      map[string]string{"X-aws-ec2-metadata-token-ttl-seconds": "21600"},
 			ResponseHeader:     map[string]string{"Server": "EC2ws"},
 			ExpectedStatusCode: http.StatusOK,
