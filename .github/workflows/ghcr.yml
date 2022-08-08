@@ -1,8 +1,8 @@
 name: docker-hub-push
 on:
   push:
-    tags:
-      - '*'
+    branches:
+      - 'main'
 
 env:
   IMAGE_NAME: ghcr.io/4armed/kubeletmein
