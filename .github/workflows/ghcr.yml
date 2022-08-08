@@ -15,9 +15,14 @@ jobs:
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Get version
+      - name: Create image tag
         id: vars
-        run: echo ::set-output name=tag::$(echo ${GITHUB_REF#refs/tags/})
+        run: |
+          BRANCH_NAME=${GITHUB_REF##*/}
+          COMMIT_SHA=$(git rev-parse --short HEAD)
+          TIMESTAMP=$(date +%s)
+          TAG="${BRANCH_NAME}-${COMMIT_SHA}-${TIMESTAMP}"
+          echo ::set-output name=tag::$TAG
       - name: Build with Docker
         run: docker build . -f build/Dockerfile --tag ${{ env.IMAGE_NAME }}:${{steps.vars.outputs.tag}} --label "org.opencontainers.image.source=${{github.server_url}}/${{github.repository}}"
       - name: Push the tagged Docker image
