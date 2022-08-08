@@ -71,6 +71,7 @@ func Generate(c *config.Config) *cobra.Command {
 	cmd.Flags().StringVarP(&c.MetadataFile, "metadata-file", "f", "", "Don't try to parse metadata, load from the specified filename instead")
 	cmd.Flags().StringVarP(&c.CertDir, "cert-dir", "d", "kubeletmein-pki", "Directory into which the new cert will be written")
 	cmd.Flags().StringVarP(&c.NodeName, "node-name", "n", "", "Node name to use for CSR. Default is to detect from metadata if needed")
+	cmd.Flags().StringVar(&c.Region, "region", "", "Region used in generation of kubeconfig")
 
 	return cmd
 }

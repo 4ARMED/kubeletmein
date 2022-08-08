@@ -29,6 +29,7 @@ import (
 // Generate creates the kubeconfig for EKS
 func Generate(c *config.Config) error {
 	var userData string
+	var region string
 	var err error
 
 	// get user-data
@@ -46,9 +47,16 @@ func Generate(c *config.Config) error {
 		}
 	}
 
+	if c.Region != "" {
+		region, err = getRegion()
+		if err != nil {
+			return err
+		}
+	}
+
 	// These parsers should return an api.Config{} struct
 	logger.Info("parsing user-data")
-	kubeConfigData, err := ParseUserData(userData)
+	kubeConfigData, err := ParseUserData(userData, region)
 	if err != nil {
 		return err
 	}
@@ -65,13 +73,17 @@ func Generate(c *config.Config) error {
 	return err
 }
 
+// TODO: refactor all of this to be better mockable.
+// At the moment we have these calls here which ignore the functions in
+// metadata.go completely.
 func getUserData() (string, error) {
 	md := ec2metadata.New(session.New())
 
-	userData, err := md.GetUserData()
-	if err != nil {
-		return "", err
-	}
+	return md.GetUserData()
+}
 
-	return userData, nil
+func getRegion() (string, error) {
+	md := ec2metadata.New(session.New())
+
+	return md.Region()
 }

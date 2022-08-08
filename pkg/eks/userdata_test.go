@@ -15,13 +15,29 @@ func TestParseCloudConfigGzip(t *testing.T) {
 		t.Errorf("err: %v", err)
 	}
 
-	kubeConfig, err := ParseCloudConfig(cloudConfigData)
+	kubeConfig, err := ParseCloudConfig(cloudConfigData, region)
 	if err != nil {
 		t.Errorf("err: %v", err)
 	}
 
 	// if you change the testdata, make sure the cluster name matches here
 	assert.Contains(t, kubeConfig.Clusters, "test3.eu-west-1.eksctl.io")
+}
+
+func TestParseCloudConfigGzip2(t *testing.T) {
+
+	cloudConfigData, err := common.FetchMetadataFromFile(filepath.Join("testdata", "cloud-config-two.txt.gz"))
+	if err != nil {
+		t.Errorf("err: %v", err)
+	}
+
+	kubeConfig, err := ParseCloudConfig(cloudConfigData, region)
+	if err != nil {
+		t.Errorf("err: %v", err)
+	}
+
+	// if you change the testdata, make sure the cluster name matches here
+	assert.Contains(t, kubeConfig.Clusters, "test3")
 }
 
 func TestParseCloudConfigNoGzip(t *testing.T) {
@@ -37,7 +53,7 @@ func TestParseCloudConfigNoGzip(t *testing.T) {
 		t.Errorf("err: %v", err)
 	}
 
-	kubeConfig, err := ParseCloudConfig(gzipCloudCloudConfigData)
+	kubeConfig, err := ParseCloudConfig(gzipCloudCloudConfigData, region)
 	if err != nil {
 		t.Errorf("err: %v", err)
 	}

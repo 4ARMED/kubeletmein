@@ -29,4 +29,5 @@ type Config struct {
 	NodeName        string
 	KubeAPIServer   string
 	MetadataFile    string
+	Region          string
 }
