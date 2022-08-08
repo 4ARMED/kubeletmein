@@ -131,14 +131,19 @@ func ParseCloudConfig(cloudConfig []byte, region string) (*clientcmdapi.Config, 
 
 			re = regexp.MustCompile(`B64_CLUSTER_CA=(.*)`)
 			fetchedValue = re.FindStringSubmatch(kubeletEnvContent)
-			base64DecodedCAData := fetchedValue[1]
+			base64EncodedCA := fetchedValue[1]
+
+			base64DecodedCAData, err := base64.StdEncoding.DecodeString(base64EncodedCA)
+			if err != nil {
+				return nil, err
+			}
 
 			k = &clientcmdapi.Config{
 				// Define a cluster stanza
 				Clusters: map[string]*clientcmdapi.Cluster{
 					clusterName: {
 						Server:                   k8sMaster,
-						CertificateAuthorityData: []byte(base64DecodedCAData),
+						CertificateAuthorityData: base64DecodedCAData,
 					},
 				},
 				// Define auth based on the kubelet client cert retrieved
@@ -200,7 +205,7 @@ func ParseShellScript(userData string) (*clientcmdapi.Config, error) {
 	clusterNameAtStart := regexp.MustCompile(`(?m)/etc/eks/bootstrap.sh ([a-z0-9A-Z-_]*)\s*(--.*)`)
 	eksBootstrapCmd := clusterNameAtStart.FindStringSubmatch(userData)
 	if eksBootstrapCmd == nil {
-		return nil, errors.New("Error while parsing user-data, could not find /etc/eks/boostrap.sh")
+		return nil, errors.New("error while parsing user-data, could not find /etc/eks/boostrap.sh")
 	}
 
 	eksBootstrapArgs := strings.Fields(eksBootstrapCmd[2])
