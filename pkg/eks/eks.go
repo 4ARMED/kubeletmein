@@ -47,7 +47,7 @@ func Generate(c *config.Config) error {
 		}
 	}
 
-	if c.Region != "" {
+	if c.Region == "" {
 		region, err = getRegion()
 		if err != nil {
 			return err
