@@ -8,6 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var (
+	region string = "eu-west-1"
+)
+
 func TestGetUserDataCloudConfig(t *testing.T) {
 	// Shell script
 
@@ -24,7 +28,7 @@ func TestParseUserDataFromFile(t *testing.T) {
 		t.Errorf("err: %v", err)
 	}
 
-	kubeConfigData, err := ParseUserData(userData)
+	kubeConfigData, err := ParseUserData(userData, region)
 	if err != nil {
 		t.Errorf("err: %v", err)
 	}

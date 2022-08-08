@@ -30,7 +30,7 @@ type CloudConfig struct {
 
 // ParseUserData takes a string input metadata, works out its type
 // and returns a *clientcmdapi.Config ready for marshalling to disk.
-func ParseUserData(userData string) (*clientcmdapi.Config, error) {
+func ParseUserData(userData, region string) (*clientcmdapi.Config, error) {
 
 	var kubeConfigData *clientcmdapi.Config
 
@@ -55,7 +55,7 @@ func ParseUserData(userData string) (*clientcmdapi.Config, error) {
 	match := re.MatchString(userData)
 	if match {
 		logger.Debug("assuming gzipped cloud-config")
-		kubeConfigData, err = ParseCloudConfig([]byte(userData))
+		kubeConfigData, err = ParseCloudConfig([]byte(userData), region)
 		if err != nil {
 			return nil, err
 		}
@@ -74,7 +74,7 @@ func ParseUserData(userData string) (*clientcmdapi.Config, error) {
 // As a kubelet kubeconfig file is provided we basically pull this out as-is
 // from cloud-config but merge in our CA data as `certificate-authority-data`
 // to save us having to write out a cert file.
-func ParseCloudConfig(cloudConfig []byte) (*clientcmdapi.Config, error) {
+func ParseCloudConfig(cloudConfig []byte, region string) (*clientcmdapi.Config, error) {
 
 	var cloudConfigData []byte
 	k := &clientcmdapi.Config{}
@@ -109,6 +109,63 @@ func ParseCloudConfig(cloudConfig []byte) (*clientcmdapi.Config, error) {
 			k, err = clientcmd.Load([]byte(v.Content))
 			if err != nil {
 				return nil, err
+			}
+		}
+		if v.Path == "/etc/eksctl/kubelet.env" {
+
+			kubeletEnvContent := v.Content
+
+			re := regexp.MustCompile(`CLUSTER_NAME=(.*)`)
+			fetchedValue := re.FindStringSubmatch(kubeletEnvContent)
+
+			if len(fetchedValue) == 0 {
+				// different format of cloud-config
+				continue
+			}
+
+			clusterName := fetchedValue[1]
+
+			re = regexp.MustCompile(`API_SERVER_URL=(.*)`)
+			fetchedValue = re.FindStringSubmatch(kubeletEnvContent)
+			k8sMaster := fetchedValue[1]
+
+			re = regexp.MustCompile(`B64_CLUSTER_CA=(.*)`)
+			fetchedValue = re.FindStringSubmatch(kubeletEnvContent)
+			base64DecodedCAData := fetchedValue[1]
+
+			k = &clientcmdapi.Config{
+				// Define a cluster stanza
+				Clusters: map[string]*clientcmdapi.Cluster{
+					clusterName: {
+						Server:                   k8sMaster,
+						CertificateAuthorityData: []byte(base64DecodedCAData),
+					},
+				},
+				// Define auth based on the kubelet client cert retrieved
+				AuthInfos: map[string]*clientcmdapi.AuthInfo{
+					"kubelet": {
+						Exec: &clientcmdapi.ExecConfig{
+							APIVersion: "client.authentication.k8s.io/v1alpha1",
+							Command:    "aws",
+							Args: []string{
+								"eks",
+								"get-token",
+								"--cluster-name",
+								clusterName,
+								"--region",
+								region,
+							},
+						},
+					},
+				},
+				// Define a context and set as current
+				Contexts: map[string]*clientcmdapi.Context{
+					"kubeletmein": {
+						Cluster:  clusterName,
+						AuthInfo: "kubelet",
+					},
+				},
+				CurrentContext: "kubeletmein",
 			}
 		}
 	}

@@ -25,10 +25,12 @@ func NewEC2MetadataClient() (*EC2MetadataClient, error) {
 // This is all so we can mock it. There has to be a better way but
 // the AWS Go SDK seems...a bit rubbish.
 func (c *EC2MetadataClient) GetUserData() (string, error) {
-	userData, err := c.GetUserData()
-	if err != nil {
-		return "", err
-	}
+	return c.GetUserData()
+}
 
-	return userData, nil
+// Region wraps the the AWS EC2 Region call
+// This is all so we can mock it. There has to be a better way but
+// the AWS Go SDK seems...a bit rubbish.
+func (c *EC2MetadataClient) Region() (string, error) {
+	return c.Region()
 }
