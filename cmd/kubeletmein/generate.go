@@ -55,6 +55,12 @@ func Generate(c *config.Config) *cobra.Command {
 				if err != nil {
 					return err
 				}
+			case "eks-imdsv2":
+				logger.Info("EKS using IMDSv2 detected")
+				err := eks.Generate(c)
+				if err != nil {
+					return err
+				}
 			case "autodetect":
 				logger.Debug("autodetect? We should not have got here")
 			default:
