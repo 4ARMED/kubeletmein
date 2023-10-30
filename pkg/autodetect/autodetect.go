@@ -41,7 +41,7 @@ var (
 		"eks": Provider{
 			Path:               "/",
 			Header:             map[string]string{"Server": "EC2ws"},
-			ExpectedStatusCode: http.StatusOK,
+			ExpectedStatusCode: http.StatusUnauthorized,
 		},
 	}
 )
