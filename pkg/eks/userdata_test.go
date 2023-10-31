@@ -69,7 +69,7 @@ func TestParseShellScriptManagementConsole(t *testing.T) {
 		t.Errorf("err: %v", err)
 	}
 
-	kubeConfig, err := ParseShellScript(string(userData))
+	kubeConfig, err := ParseShellScript(string(userData), "eu-west-1")
 	if err != nil {
 		t.Errorf("err: %v", err)
 	}
@@ -86,7 +86,7 @@ func TestParseShellScriptCustom(t *testing.T) {
 		t.Errorf("err: %v", err)
 	}
 
-	kubeConfig, err := ParseShellScript(string(userData))
+	kubeConfig, err := ParseShellScript(string(userData), "eu-west-1")
 	if err != nil {
 		t.Errorf("err: %v", err)
 	}

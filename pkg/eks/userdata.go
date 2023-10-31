@@ -61,7 +61,7 @@ func ParseUserData(userData, region string) (*clientcmdapi.Config, error) {
 		}
 	} else {
 		logger.Debug("shell script assuming, looking for /etc/eks/bootstrap.sh")
-		kubeConfigData, err = ParseShellScript(userData)
+		kubeConfigData, err = ParseShellScript(userData, region)
 		if err != nil {
 			return nil, err
 		}
@@ -185,7 +185,7 @@ func ParseCloudConfig(cloudConfig []byte, region string) (*clientcmdapi.Config, 
 }
 
 // ParseShellScript parses shell-script format user-data seen on managed nodegroups
-func ParseShellScript(userData string) (*clientcmdapi.Config, error) {
+func ParseShellScript(userData string, region string) (*clientcmdapi.Config, error) {
 	// We must account for all arguments to bootstrap.sh in order to find the non-flag based cluster name
 	// https://github.com/awslabs/amazon-eks-ami/blob/master/files/bootstrap.sh
 
@@ -267,7 +267,7 @@ func ParseShellScript(userData string) (*clientcmdapi.Config, error) {
 						"--cluster-name",
 						clusterName,
 						"--region",
-						"eu-west-1",
+						region,
 					},
 					Env: []clientcmdapi.ExecEnvVar{
 						{

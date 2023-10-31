@@ -20,8 +20,6 @@ import (
 
 	"github.com/4armed/kubeletmein/pkg/common"
 	"github.com/4armed/kubeletmein/pkg/config"
-	"github.com/aws/aws-sdk-go/aws/ec2metadata"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/kubicorn/kubicorn/pkg/logger"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -77,13 +75,19 @@ func Generate(c *config.Config) error {
 // At the moment we have these calls here which ignore the functions in
 // metadata.go completely.
 func getUserData() (string, error) {
-	md := ec2metadata.New(session.New())
+	md, err := NewEC2MetadataClient()
+	if err != nil {
+		return "", err
+	}
 
 	return md.GetUserData()
 }
 
 func getRegion() (string, error) {
-	md := ec2metadata.New(session.New())
+	md, err := NewEC2MetadataClient()
+	if err != nil {
+		return "", err
+	}
 
 	return md.Region()
 }
