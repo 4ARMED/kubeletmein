@@ -259,7 +259,7 @@ func ParseShellScript(userData string) (*clientcmdapi.Config, error) {
 		AuthInfos: map[string]*clientcmdapi.AuthInfo{
 			"kubelet": {
 				Exec: &clientcmdapi.ExecConfig{
-					APIVersion: "client.authentication.k8s.io/v1alpha1",
+					APIVersion: "client.authentication.k8s.io/v1beta1",
 					Command:    "aws",
 					Args: []string{
 						"eks",
