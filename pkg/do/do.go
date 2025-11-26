@@ -105,27 +105,27 @@ func (g *Generator) bootstrapKubeletConfig() error {
 	}
 
 	logger.Info("generating bootstrap-kubeconfig file at: %v", g.config.BootstrapConfig)
-	kubeconfigData := clientcmdapi.Config{
-		// Define a cluster stanza
-		Clusters: map[string]*clientcmdapi.Cluster{"local": {
-			Server:                   "https://" + g.metadata.KubeMaster,
-			InsecureSkipTLSVerify:    false,
-			CertificateAuthorityData: []byte(g.metadata.CaCert),
-		}},
-		// Define auth based on the kubelet client cert retrieved
-		AuthInfos: map[string]*clientcmdapi.AuthInfo{"kubelet": {
-			Token: g.metadata.KubeletToken,
-		}},
-		// Define a context and set as current
-		Contexts: map[string]*clientcmdapi.Context{"service-account-context": {
-			Cluster:  "local",
-			AuthInfo: "kubelet",
-		}},
-		CurrentContext: "service-account-context",
-	}
+	kubeconfigData := clientcmdapi.NewConfig()
+
+	cluster := clientcmdapi.NewCluster()
+	cluster.Server = "https://" + g.metadata.KubeMaster
+	cluster.InsecureSkipTLSVerify = false
+	cluster.CertificateAuthorityData = []byte(g.metadata.CaCert)
+	kubeconfigData.Clusters["local"] = cluster
+
+	authInfo := clientcmdapi.NewAuthInfo()
+	authInfo.Token = g.metadata.KubeletToken
+	kubeconfigData.AuthInfos["kubelet"] = authInfo
+
+	context := clientcmdapi.NewContext()
+	context.Cluster = "local"
+	context.AuthInfo = "kubelet"
+	kubeconfigData.Contexts["service-account-context"] = context
+
+	kubeconfigData.CurrentContext = "service-account-context"
 
 	// Marshal to disk
-	err = clientcmd.WriteToFile(kubeconfigData, g.config.BootstrapConfig)
+	err = clientcmd.WriteToFile(*kubeconfigData, g.config.BootstrapConfig)
 	if err != nil {
 		return fmt.Errorf("unable to write bootstrap-kubeconfig file: %v", err)
 	}

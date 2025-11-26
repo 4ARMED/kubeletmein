@@ -1,6 +1,6 @@
 module github.com/4armed/kubeletmein
 
-go 1.19
+go 1.25
 
 require (
 	cloud.google.com/go v0.78.0

@@ -138,40 +138,34 @@ func ParseCloudConfig(cloudConfig []byte, region string) (*clientcmdapi.Config, 
 				return nil, err
 			}
 
-			k = &clientcmdapi.Config{
-				// Define a cluster stanza
-				Clusters: map[string]*clientcmdapi.Cluster{
-					clusterName: {
-						Server:                   k8sMaster,
-						CertificateAuthorityData: base64DecodedCAData,
-					},
+			k = clientcmdapi.NewConfig()
+
+			cluster := clientcmdapi.NewCluster()
+			cluster.Server = k8sMaster
+			cluster.CertificateAuthorityData = base64DecodedCAData
+			k.Clusters[clusterName] = cluster
+
+			authInfo := clientcmdapi.NewAuthInfo()
+			authInfo.Exec = &clientcmdapi.ExecConfig{
+				APIVersion: "client.authentication.k8s.io/v1alpha1",
+				Command:    "aws",
+				Args: []string{
+					"eks",
+					"get-token",
+					"--cluster-name",
+					clusterName,
+					"--region",
+					region,
 				},
-				// Define auth based on the kubelet client cert retrieved
-				AuthInfos: map[string]*clientcmdapi.AuthInfo{
-					"kubelet": {
-						Exec: &clientcmdapi.ExecConfig{
-							APIVersion: "client.authentication.k8s.io/v1alpha1",
-							Command:    "aws",
-							Args: []string{
-								"eks",
-								"get-token",
-								"--cluster-name",
-								clusterName,
-								"--region",
-								region,
-							},
-						},
-					},
-				},
-				// Define a context and set as current
-				Contexts: map[string]*clientcmdapi.Context{
-					"kubeletmein": {
-						Cluster:  clusterName,
-						AuthInfo: "kubelet",
-					},
-				},
-				CurrentContext: "kubeletmein",
 			}
+			k.AuthInfos["kubelet"] = authInfo
+
+			context := clientcmdapi.NewContext()
+			context.Cluster = clusterName
+			context.AuthInfo = "kubelet"
+			k.Contexts["kubeletmein"] = context
+
+			k.CurrentContext = "kubeletmein"
 		}
 	}
 
@@ -247,46 +241,40 @@ func ParseShellScript(userData string, region string) (*clientcmdapi.Config, err
 	clusterName = checkVariable(clusterName, userData)
 	k8sMaster := checkVariable(apiServerEndpoint, userData)
 
-	kubeconfigData := &clientcmdapi.Config{
-		// Define a cluster stanza
-		Clusters: map[string]*clientcmdapi.Cluster{
-			clusterName: {
-				Server:                   k8sMaster,
-				CertificateAuthorityData: base64DecodedCAData,
+	kubeconfigData := clientcmdapi.NewConfig()
+
+	cluster := clientcmdapi.NewCluster()
+	cluster.Server = k8sMaster
+	cluster.CertificateAuthorityData = base64DecodedCAData
+	kubeconfigData.Clusters[clusterName] = cluster
+
+	authInfo := clientcmdapi.NewAuthInfo()
+	authInfo.Exec = &clientcmdapi.ExecConfig{
+		APIVersion: "client.authentication.k8s.io/v1beta1",
+		Command:    "aws",
+		Args: []string{
+			"eks",
+			"get-token",
+			"--cluster-name",
+			clusterName,
+			"--region",
+			region,
+		},
+		Env: []clientcmdapi.ExecEnvVar{
+			{
+				Name:  "AWS_STS_REGIONAL_ENDPOINTS",
+				Value: "regional",
 			},
 		},
-		// Define auth based on the kubelet client cert retrieved
-		AuthInfos: map[string]*clientcmdapi.AuthInfo{
-			"kubelet": {
-				Exec: &clientcmdapi.ExecConfig{
-					APIVersion: "client.authentication.k8s.io/v1beta1",
-					Command:    "aws",
-					Args: []string{
-						"eks",
-						"get-token",
-						"--cluster-name",
-						clusterName,
-						"--region",
-						region,
-					},
-					Env: []clientcmdapi.ExecEnvVar{
-						{
-							Name:  "AWS_STS_REGIONAL_ENDPOINTS",
-							Value: "regional",
-						},
-					},
-				},
-			},
-		},
-		// Define a context and set as current
-		Contexts: map[string]*clientcmdapi.Context{
-			"kubeletmein": {
-				Cluster:  clusterName,
-				AuthInfo: "kubelet",
-			},
-		},
-		CurrentContext: "kubeletmein",
 	}
+	kubeconfigData.AuthInfos["kubelet"] = authInfo
+
+	context := clientcmdapi.NewContext()
+	context.Cluster = clusterName
+	context.AuthInfo = "kubelet"
+	kubeconfigData.Contexts["kubeletmein"] = context
+
+	kubeconfigData.CurrentContext = "kubeletmein"
 
 	return kubeconfigData, nil
 }
