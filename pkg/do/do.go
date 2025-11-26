@@ -66,7 +66,7 @@ func Generate(c *config.Config) error {
 	}
 
 	logger.Info("got new cert and wrote kubeconfig")
-	logger.Info("now try: kubectl --kubeconfig %v get pods", c.KubeConfig)
+	logger.Info("now try: kubectl --kubeconfig %v get pods -A --field-selector spec.nodeName=%v", c.KubeConfig, c.NodeName)
 
 	return nil
 }
