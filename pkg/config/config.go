@@ -25,7 +25,6 @@ type Config struct {
 	KubeletCertPath string
 	KubeletToken    string
 	KubeConfig      string
-	CertDir         string
 	NodeName        string
 	KubeAPIServer   string
 	MetadataFile    string

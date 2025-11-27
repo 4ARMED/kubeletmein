@@ -59,7 +59,7 @@ func Generate(c *config.Config) error {
 	}
 
 	logger.Info("using bootstrap-config to request new cert for node: %v", c.NodeName)
-	err := bootstrap.LoadClientCert(context.TODO(), c.KubeConfig, c.BootstrapConfig, c.CertDir, types.NodeName(c.NodeName))
+	err := bootstrap.LoadClientCert(context.TODO(), c.KubeConfig, c.BootstrapConfig, types.NodeName(c.NodeName))
 	if err != nil {
 		return fmt.Errorf("unable to create certificate: %v", err)
 	}

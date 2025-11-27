@@ -17,7 +17,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/kubicorn/kubicorn/pkg/logger"
@@ -31,19 +30,16 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/transport"
 	certutil "k8s.io/client-go/util/cert"
-	"k8s.io/client-go/util/certificate"
 	"k8s.io/client-go/util/certificate/csr"
 	"k8s.io/client-go/util/keyutil"
 	"k8s.io/kubectl/pkg/scheme"
 )
 
-const tmpPrivateKeyFile = "kubelet-client.key.tmp"
-
 // LoadClientCert requests a client cert for kubelet if the kubeconfigPath file does not exist.
 // The kubeconfig at bootstrapPath is used to request a client certificate from the API server.
 // On success, a kubeconfig file referencing the generated key and obtained certificate is written to kubeconfigPath.
 // The certificate and key file are stored in certDir.
-func LoadClientCert(ctx context.Context, kubeconfigPath, bootstrapPath, certDir string, nodeName types.NodeName) error {
+func LoadClientCert(ctx context.Context, kubeconfigPath string, bootstrapPath string, nodeName types.NodeName) error {
 	// Short-circuit if the kubeconfig file exists and is valid.
 	ok, err := isClientConfigStillValid(kubeconfigPath)
 	if err != nil {
@@ -66,32 +62,9 @@ func LoadClientCert(ctx context.Context, kubeconfigPath, bootstrapPath, certDir 
 		return fmt.Errorf("unable to create certificates signing request client: %v", err)
 	}
 
-	store, err := certificate.NewFileStore("kubelet-client", certDir, certDir, "", "")
+	keyData, err := keyutil.MakeEllipticPrivateKeyPEM()
 	if err != nil {
-		return fmt.Errorf("unable to build bootstrap cert store")
-	}
-
-	var keyData []byte
-	if cert, err := store.Current(); err == nil {
-		if cert.PrivateKey != nil {
-			keyData, err = keyutil.MarshalPrivateKeyToPEM(cert.PrivateKey)
-			if err != nil {
-				keyData = nil
-			}
-		}
-	}
-	// Cache the private key in a separate file until CSR succeeds. This has to
-	// be a separate file because store.CurrentPath() points to a symlink
-	// managed by the store.
-	privKeyPath := filepath.Join(certDir, tmpPrivateKeyFile)
-	if !verifyKeyData(keyData) {
-		logger.Info("No valid private key and/or certificate found, reusing existing private key or creating a new one")
-		// Note: always call LoadOrGenerateKeyFile so that private key is
-		// reused on next startup if CSR request fails.
-		keyData, _, err = keyutil.LoadOrGenerateKeyFile(privKeyPath)
-		if err != nil {
-			return err
-		}
+		return fmt.Errorf("error generating key: %v", err)
 	}
 
 	if err := waitForServer(ctx, *bootstrapClientConfig, 1*time.Minute); err != nil {
@@ -102,17 +75,11 @@ func LoadClientCert(ctx context.Context, kubeconfigPath, bootstrapPath, certDir 
 	if err != nil {
 		return err
 	}
-	if _, err := store.Update(certData, keyData); err != nil {
-		return err
-	}
-	if err := os.Remove(privKeyPath); err != nil && !os.IsNotExist(err) {
-		logger.Info("failed cleaning up private key file %q: %v", privKeyPath, err)
-	}
 
-	return writeKubeconfigFromBootstrapping(bootstrapClientConfig, kubeconfigPath, store.CurrentPath())
+	return writeKubeconfigFromBootstrapping(bootstrapClientConfig, kubeconfigPath, certData, keyData)
 }
 
-func writeKubeconfigFromBootstrapping(bootstrapClientConfig *restclient.Config, kubeconfigPath, pemPath string) error {
+func writeKubeconfigFromBootstrapping(bootstrapClientConfig *restclient.Config, kubeconfigPath string, certData []byte, keyData []byte) error {
 	// Get the CA data from the bootstrap client config.
 	caFile, caData := bootstrapClientConfig.CAFile, []byte{}
 	if len(caFile) == 0 {
@@ -127,20 +94,20 @@ func writeKubeconfigFromBootstrapping(bootstrapClientConfig *restclient.Config, 
 	cluster.InsecureSkipTLSVerify = bootstrapClientConfig.Insecure
 	cluster.CertificateAuthority = caFile
 	cluster.CertificateAuthorityData = caData
-	kubeconfigData.Clusters["default-cluster"] = cluster
+	kubeconfigData.Clusters["kubeletmein"] = cluster
 
 	authInfo := clientcmdapi.NewAuthInfo()
-	authInfo.ClientCertificate = pemPath
-	authInfo.ClientKey = pemPath
-	kubeconfigData.AuthInfos["default-auth"] = authInfo
+	authInfo.ClientCertificateData = certData
+	authInfo.ClientKeyData = keyData
+	kubeconfigData.AuthInfos["kubelet"] = authInfo
 
 	context := clientcmdapi.NewContext()
-	context.Cluster = "default-cluster"
-	context.AuthInfo = "default-auth"
+	context.Cluster = "kubeletmein"
+	context.AuthInfo = "kubelet"
 	context.Namespace = "default"
-	kubeconfigData.Contexts["default-context"] = context
+	kubeconfigData.Contexts["kubeletmein"] = context
 
-	kubeconfigData.CurrentContext = "default-context"
+	kubeconfigData.CurrentContext = "kubeletmein"
 
 	// Marshal to disk
 	return clientcmd.WriteToFile(kubeconfigData, kubeconfigPath)
