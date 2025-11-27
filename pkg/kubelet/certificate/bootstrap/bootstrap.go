@@ -282,13 +282,14 @@ func requestNodeCertificate(ctx context.Context, client clientset.Interface, pri
 		return nil, err
 	}
 
-	reqName, reqUID, err := csr.RequestCertificate(client, csrData, name, certificatesv1.KubeAPIServerClientKubeletSignerName, usages, privateKey)
+	ctx, cancel := context.WithTimeout(ctx, 3600*time.Second)
+	defer cancel()
+
+	requestTimeout := 3600 * time.Second
+	reqName, reqUID, err := csr.RequestCertificateWithContext(ctx, client, csrData, name, certificatesv1.KubeAPIServerClientKubeletSignerName, &requestTimeout, usages, privateKey)
 	if err != nil {
 		return nil, err
 	}
-
-	ctx, cancel := context.WithTimeout(ctx, 3600*time.Second)
-	defer cancel()
 
 	logger.Info("Waiting for client certificate to be issued")
 	return csr.WaitForCertificate(ctx, client, reqName, reqUID)
